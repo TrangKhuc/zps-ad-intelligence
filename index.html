@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZPS Ad Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="src/styles/main.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!--
+  ZPS Ad Intelligence — Component Map
+  =====================================
+  Edit individual components in src/components/
+  Edit data in src/data/conquian.js
+  Edit styles in src/styles/main.css
+  Edit JS logic in src/main.js
+
+  Components:
+    Topbar.html             — Logo, breadcrumb, upload button, sync status
+    UploadPanel.html        — 3-slot CSV upload (Sensor Tower exports)
+    Sidebar.html            — Left nav (Overview, Creative Profile, Timer, Playbook)
+    CompetitorSelector.html — Step 1: app watchlist chips
+    IntelRail.html          — CHI/CREI/Downloads KPI bar (always visible)
+    FilterBar.html          — 2-row filter bar with dropdown options
+    TabNav.html             — Tab buttons (Overview / F1 / F2 / F3)
+    TabOverview.html        — Summary signals + action queue
+    TabCreativeProfile.html — F1: charts + CHI/CREI breakdown + creative grid + brainstorm
+    TabTimerHeatmap.html    — F2: timeline + Chart.js combo + channel heatmap
+    TabPlaybook.html        — F3: real patterns + data gap card
+-->
+
+<div class="shell" id="app-shell">
+  <!-- injected by build or assembled here directly -->
+</div>
+
+<script type="module">
+  // Simple component assembler — loads HTML partials into #app-shell
+  // In Nimbalyst / Claude Code, you can edit any component file directly
+  // and refresh to see changes, or ask Claude Code to update specific components.
+
+  const COMPONENTS = [
+    'src/components/Topbar.html',
+    'src/components/UploadPanel.html',
+    'src/components/Sidebar.html',
+  ];
+
+  const MAIN_CONTENT = [
+    'src/components/CompetitorSelector.html',
+    'src/components/IntelRail.html',
+    'src/components/FilterBar.html',
+    'src/components/TabNav.html',
+    'src/components/TabOverview.html',
+    'src/components/TabCreativeProfile.html',
+    'src/components/TabTimerHeatmap.html',
+    'src/components/TabPlaybook.html',
+  ];
+
+  async function loadComponent(path) {
+    try {
+      const res = await fetch(path);
+      return await res.text();
+    } catch (e) {
+      console.warn('Could not load:', path);
+      return `<!-- Failed to load ${path} -->`;
+    }
+  }
+
+  async function init() {
+    const shell = document.getElementById('app-shell');
+
+    // Load topbar, upload panel, sidebar (grid-column: 1/-1 or 1)
+    for (const path of COMPONENTS) {
+      const html = await loadComponent(path);
+      shell.insertAdjacentHTML('beforeend', html);
+    }
+
+    // Wrap main content in .main div
+    const mainDiv = document.createElement('div');
+    mainDiv.className = 'main';
+    for (const path of MAIN_CONTENT) {
+      const html = await loadComponent(path);
+      mainDiv.insertAdjacentHTML('beforeend', html);
+    }
+    shell.appendChild(mainDiv);
+
+    // Load and execute main JS
+    const script = document.createElement('script');
+    script.src = 'src/main.js';
+    document.body.appendChild(script);
+  }
+
+  init();
+</script>
+
+</body>
+</html>

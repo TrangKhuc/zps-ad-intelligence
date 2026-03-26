@@ -1,0 +1,396 @@
+<!-- TabCreativeProfile -->
+<!-- ═══════════ F1: CREATIVE PROFILE ═══════════ -->
+    <div class="content" id="tab-f1">
+
+      <!-- ── SECTION 1: OVERVIEW CHART ── -->
+      <div class="overview-section">
+        <div class="overview-section-head">
+          <div>
+            <div class="card-title">Creative mix overview</div>
+            <div class="card-sub">Tỉ trọng creative theo format, stage và hook · Last 30d · mỗi tuần cộng = 100%</div>
+          </div>
+          <div class="chart-toggle">
+            <button class="ct-btn active" onclick="switchChart('format', this)">By Format</button>
+            <button class="ct-btn" onclick="switchChart('stage', this)">By Stage</button>
+            <button class="ct-btn" onclick="switchChart('hook', this)">By Hook</button>
+            <button class="ct-btn" onclick="switchChart('trend', this)">Weekly trend</button>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <div id="chart-format" class="chart-canvas-wrap"><canvas id="c-format"></canvas></div>
+          <div id="chart-stage"  class="chart-canvas-wrap" style="display:none"><canvas id="c-stage"></canvas></div>
+          <div id="chart-hook"   class="chart-canvas-wrap" style="display:none"><canvas id="c-hook"></canvas></div>
+          <div id="chart-trend"  class="chart-canvas-wrap" style="display:none"><canvas id="c-trend"></canvas></div>
+        </div>
+        <div class="insight-pills" id="chart-pills">
+          <!-- pills injected by JS based on active chart -->
+        </div>
+      </div>
+
+
+      <!-- ── AUTO-LABEL PANEL ── -->
+      <div class="al-panel" id="al-panel">
+        <div class="al-head">
+          <div>
+            <div class="al-title">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:5px;"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M5.5 8.5l2 2 3-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Auto-label hook categories với Claude AI
+            </div>
+            <div class="al-sub">Phân tích creative URL → gán Hook · Emotion · Mechanic · Confidence score tự động</div>
+          </div>
+          <button class="card-btn" onclick="toggleAlPanel(false)">Hide</button>
+        </div>
+        <div class="al-body">
+          <div class="al-controls">
+            <select id="al-scope" class="al-scope-sel">
+              <option value="active">Active now (126 creatives)</option>
+              <option value="scaling">Scaling + Testing (150)</option>
+              <option value="all">All 388 creatives</option>
+              <option value="top10">Top 10 (quick test)</option>
+            </select>
+            <button class="al-run-btn" id="al-run-btn" onclick="runAutoLabel()">
+              <span id="al-btn-inner" style="display:flex;align-items:center;gap:6px;">
+                <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M5 3l8 5-8 5V3z" fill="currentColor"/></svg>
+                Label creatives
+              </span>
+            </button>
+            <button class="al-export-btn" id="al-export-btn" onclick="exportLabels()" style="display:none;">
+              <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 3v8M5 8l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 13h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Export CSV
+            </button>
+            <div id="al-label-count" style="font-family:var(--fm);font-size:9px;color:var(--green);display:none;"></div>
+          </div>
+          <div class="al-note">
+            Dùng Claude API built-in (không cần API key). Với video creatives: thử fetch thumbnail, nếu CORS block thì analyze theo metadata (duration, type pattern).
+            Top 10 ≈ 10 giây · Active 126 ≈ 2–3 phút · All 388 ≈ 6–8 phút.
+          </div>
+          <div class="al-progress-wrap" id="al-progress-wrap">
+            <div class="al-progress-text" id="al-progress-text">Chuẩn bị…</div>
+            <div class="al-progress-track"><div class="al-progress-fill" id="al-progress-fill"></div></div>
+          </div>
+          <div class="al-results-wrap" id="al-results-wrap" style="margin-top:10px;"></div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 2: ANALYST NOTE (single, merged) ── -->
+      <div class="note" style="margin-bottom:20px;">
+        <div class="note-label">Analyst note — Creative Profile</div>
+        <div class="note-text">
+          Portfolio đang trong giai đoạn <strong>consolidation rõ ràng</strong>: 60% impression tập trung vào video format (30s + UGC), playable ổn định 14%. Đáng lo nhất là <strong>2 creatives đang decay</strong> — Ranked Mode Banner (58 ngày) chiếm 20% total impression nhưng IPM declining, và nếu không refresh tuần này CHI sẽ tiếp tục giảm từ 74 xuống. Signal tích cực: social proof hook tăng đều 5 tuần liên tiếp (48% → 72%) cho thấy đây là <strong>deliberate strategy shift</strong>, không phải test ngẫu nhiên. Kết hợp với CREI ↓19 vs W-2 → họ đã tìm được 2–3 winner và đang scale tight thay vì test broad.
+        </div>
+      </div>
+
+      <!-- ── SECTION 3: CHI + CREI COMBINED ── -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-head">
+          <div>
+            <div class="card-title">Score breakdown</div>
+            <div class="card-sub">CHI và CREI — công thức tính và sub-scores tuần này vs tuần trước</div>
+          </div>
+          <div style="display:flex;gap:20px;align-items:center;">
+            <div style="text-align:right;">
+              <div style="font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;">CHI</div>
+              <div style="font-family:var(--fd);font-size:26px;font-weight:800;color:var(--green);letter-spacing:-.03em;line-height:1;">74 <span class="delta-badge down" style="font-size:9px;vertical-align:middle;">↓3</span></div>
+            </div>
+            <div style="width:1px;height:36px;background:var(--border);"></div>
+            <div style="text-align:right;">
+              <div style="font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;">CREI</div>
+              <div style="font-family:var(--fd);font-size:26px;font-weight:800;color:var(--amber);letter-spacing:-.03em;line-height:1;">61 <span class="delta-badge down" style="font-size:9px;vertical-align:middle;">↓19</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0;">
+
+          <!-- CHI sub-scores -->
+          <div style="padding:12px 18px 8px;border-bottom:1px solid var(--border);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div style="font-family:var(--fm);font-size:9px;color:var(--t2);text-transform:uppercase;letter-spacing:.08em;">CHI — Creative Health Index</div>
+              <span class="formula-trigger" onclick="toggleFormula('chi-formula')">
+                <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M6 6c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="13" r=".7" fill="currentColor"/></svg>
+                Xem công thức
+              </span>
+            </div>
+            <div id="chi-formula" class="formula-panel" style="margin-bottom:10px;">
+              <div class="fp-title">CHI = weighted sum của 4 sub-scores</div>
+              <div class="fp-row"><div class="fp-sub">Active run rate</div><div class="fp-formula">% creatives có last_seen ≤ 3d trước / total trong 30d</div><div class="fp-weight">×30%</div></div>
+              <div class="fp-row"><div class="fp-sub">Hook diversity</div><div class="fp-formula">min(unique hook categories / 5, 1) × 100</div><div class="fp-weight">×25%</div></div>
+              <div class="fp-row"><div class="fp-sub">Outperform rate</div><div class="fp-formula">% creatives có life cycle > genre median (BR: 15d)</div><div class="fp-weight">×25%</div></div>
+              <div class="fp-row"><div class="fp-sub">Refresh cadence</div><div class="fp-formula">min(genre_median_refresh / avg_days_between_launches, 1) × 100</div><div class="fp-weight">×20%</div></div>
+              <div class="fp-note">Ví dụ tính: 80×0.30 + 100×0.25 + 62×0.25 + 58×0.20 = 24 + 25 + 15.5 + 11.6 = <strong>76.1</strong> → smoothed display: 74</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--border);">
+              <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px 10px 0;border-right:1px solid var(--border);border-bottom:none;">
+                <div class="chi-label">Active run rate</div>
+                <div class="chi-reason">43% active in 30d window</div>
+                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--coral)">43</span><span class="delta-badge down">low</span></div>
+              </div>
+              <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px;border-right:1px solid var(--border);border-bottom:none;">
+                <div class="chi-label">Hook diversity</div>
+                <div class="chi-reason">5/5 categories · max</div>
+                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--green)">100</span><span class="delta-badge flat">→0</span></div>
+              </div>
+              <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px;border-right:1px solid var(--border);border-bottom:none;">
+                <div class="chi-label">Outperform rate</div>
+                <div class="chi-reason">62% &gt; 15d median</div>
+                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--amber)">62</span><span class="delta-badge down">↓8</span></div>
+              </div>
+              <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 0 10px 14px;border-bottom:none;">
+                <div class="chi-label">Refresh cadence</div>
+                <div class="chi-reason">1 per 11d · median 7d</div>
+                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--amber)">58</span><span class="delta-badge down">↓5</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CREI sub-scores -->
+          <div style="padding:12px 18px 8px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div style="font-family:var(--fm);font-size:9px;color:var(--t2);text-transform:uppercase;letter-spacing:.08em;">CREI — Creative Risk &amp; Engagement Index</div>
+              <span class="formula-trigger" onclick="toggleFormula('crei-formula')">
+                <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M6 6c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="13" r=".7" fill="currentColor"/></svg>
+                Xem công thức
+              </span>
+            </div>
+            <div id="crei-formula" class="formula-panel" style="margin-bottom:10px;">
+              <div class="fp-title">CREI = weighted sum của 3 components</div>
+              <div class="fp-row"><div class="fp-sub">Momentum</div><div class="fp-formula">min(new_creatives/week / genre_median_weekly, 1.5) / 1.5 × 100</div><div class="fp-weight">×40%</div></div>
+              <div class="fp-row"><div class="fp-sub">Engagement delta</div><div class="fp-formula">sigmoid(WoW impression change %) × 100 — normalized, 50 = no change</div><div class="fp-weight">×35%</div></div>
+              <div class="fp-row"><div class="fp-sub">Channel stability</div><div class="fp-formula">(1 − HHI) × 100, HHI = Σ(channel_share²) — cao = concentrated</div><div class="fp-weight">×25%</div></div>
+              <div class="fp-note">Reading combinations: Momentum↑ Engagement↑ Stability↑ = scaling confidently. Momentum↑ Stability↓ = blitz/volatile. Momentum↓ Stability↑ = defending. Hiện tại Garena: consolidation (momentum↓ post-blitz, engagement normalizing, channel pivot TikTok).</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--border);">
+              <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px 10px 0;border-right:1px solid var(--border);border-bottom:none;">
+                <div class="chi-label">Momentum</div>
+                <div class="chi-reason">24 new last week vs median 3</div>
+                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--green)">100</span><span class="delta-badge up">capped</span></div>
+              </div>
+              <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px;border-right:1px solid var(--border);border-bottom:none;">
+                <div class="chi-label">Engagement delta</div>
+                <div class="chi-reason">Imp WoW −18% post-blitz</div>
+                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--amber)">48</span><span class="delta-badge down">↓22</span></div>
+              </div>
+              <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 0 10px 14px;border-bottom:none;">
+                <div class="chi-label">Channel stability</div>
+                <div class="chi-reason">HHI 0.32 — TikTok pivot</div>
+                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--blue)">68</span><span class="delta-badge flat">→+1</span></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── SECTION 4: CREATIVE GRID ── -->
+      <div class="date-bar">
+        <span style="font-family:var(--fm);font-size:10px;color:var(--t3);margin-right:2px;">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:3px;"><rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v3M11 1v3M2 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Day
+        </span>
+        <span class="date-pill">Today</span><span class="date-pill">7d</span>
+        <span class="date-pill active">30d</span><span class="date-pill">90d</span>
+        <span class="date-pill">All time</span>
+        <span style="font-size:11px;color:var(--t2);margin-left:8px;">126 active · sorted by duration</span>
+        <div class="grid-controls">
+          <select class="sort-sel">
+            <option>Duration (longest)</option>
+            <option>Duration (newest)</option>
+            <option>First Seen</option>
+            <option>Type</option>
+          </select>
+          <div class="view-toggle">
+            <button class="vbtn active"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg></button>
+            <button class="vbtn"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><line x1="2" y1="4" x2="14" y2="4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="2" y1="8" x2="14" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="2" y1="12" x2="14" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="creative-grid">
+
+        <!-- Creative 1: 359d decay — oldest active -->
+        <div class="cc">
+          <div class="cc-thumb" style="background:linear-gradient(135deg,#f5f5f5,#e8e8f0);">🃏
+            <span class="cc-dur">00:27</span>
+            <span class="cc-type video">Video</span>
+            <span class="cc-stage decay">Decay</span>
+          </div>
+          <div class="cc-meta">
+            <div class="cc-title">17afbccad8164b4b</div>
+            <div class="cc-desc">Facebook · Instagram · MAN</div>
+            <div class="cc-metrics">
+              <div class="ccm"><div class="ccm-label">Life Cycle (day)</div><div class="ccm-val" style="color:var(--coral)">359</div><div class="ccm-date">27.03.25 – 21.03.26</div></div>
+              <div class="ccm"><div class="ccm-label">Video dur.</div><div class="ccm-val">26.6s</div></div>
+            </div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;">
+              <span class="ctag ctag-hook">Gameplay demo</span>
+              <span class="ctag ctag-emotion">Excitement</span>
+              <span class="ctag ctag-warn">Fatigue risk</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Creative 2: 359d decay -->
+        <div class="cc">
+          <div class="cc-thumb" style="background:linear-gradient(135deg,#f0f0f5,#e0e0ee);">🃏
+            <span class="cc-dur">00:27</span>
+            <span class="cc-type video">Video</span>
+            <span class="cc-stage decay">Decay</span>
+          </div>
+          <div class="cc-meta">
+            <div class="cc-title">a462798bcef85add</div>
+            <div class="cc-desc">Facebook · Instagram · MAN</div>
+            <div class="cc-metrics">
+              <div class="ccm"><div class="ccm-label">Life Cycle (day)</div><div class="ccm-val" style="color:var(--coral)">359</div><div class="ccm-date">27.03.25 – 21.03.26</div></div>
+              <div class="ccm"><div class="ccm-label">Video dur.</div><div class="ccm-val">27.2s</div></div>
+            </div>
+            <div class="anomaly-flag">⚠ 359 ngày — audit ngay</div>
+          </div>
+        </div>
+
+        <!-- Creative 3: 226d decay -->
+        <div class="cc">
+          <div class="cc-thumb" style="background:linear-gradient(135deg,#eef0f8,#dde0f0);">🎴
+            <span class="cc-dur">00:27</span>
+            <span class="cc-type video">Video</span>
+            <span class="cc-stage decay">Decay</span>
+          </div>
+          <div class="cc-meta">
+            <div class="cc-title">07c14c0178cda776</div>
+            <div class="cc-desc">Facebook · Instagram · MAN</div>
+            <div class="cc-metrics">
+              <div class="ccm"><div class="ccm-label">Life Cycle (day)</div><div class="ccm-val" style="color:var(--coral)">226</div><div class="ccm-date">07.08.25 – 21.03.26</div></div>
+              <div class="ccm"><div class="ccm-label">Video dur.</div><div class="ccm-val">26.7s</div></div>
+            </div>
+            <div class="anomaly-flag">⚠ 226 ngày — frequency fatigue</div>
+          </div>
+        </div>
+
+        <!-- Creative 4: 72d scaling -->
+        <div class="cc">
+          <div class="cc-thumb" style="background:linear-gradient(135deg,#e8f4ff,#c5ddf7);">🎮
+            <span class="cc-dur">00:13</span>
+            <span class="cc-type video">Video</span>
+            <span class="cc-stage scale">Scaling</span>
+          </div>
+          <div class="cc-meta">
+            <div class="cc-title">01b2ddc3d6f79b5d</div>
+            <div class="cc-desc">Facebook · Instagram · MAN</div>
+            <div class="cc-metrics">
+              <div class="ccm"><div class="ccm-label">Life Cycle (day)</div><div class="ccm-val">72</div><div class="ccm-date">11.01.26 – 24.03.26</div></div>
+              <div class="ccm"><div class="ccm-label">Video dur.</div><div class="ccm-val">13.1s</div></div>
+            </div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;">
+              <span class="ctag ctag-hook">Win reveal</span>
+              <span class="ctag ctag-mechanic">Short-form</span>
+              <span class="ctag ctag-stage">Scaling</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Creative 5: 7d launch — newest -->
+        <div class="cc">
+          <div class="cc-thumb" style="background:linear-gradient(135deg,#e8fff4,#c5f0dc);">✨
+            <span class="cc-dur">00:17</span>
+            <span class="cc-type video">Video</span>
+            <span class="cc-stage launch">Launch</span>
+          </div>
+          <div class="cc-meta">
+            <div class="cc-title">0eab42cb611a90aa</div>
+            <div class="cc-desc">Facebook · Instagram · MAN</div>
+            <div class="cc-metrics">
+              <div class="ccm"><div class="ccm-label">Life Cycle (day)</div><div class="ccm-val">7</div><div class="ccm-date">17.03.26 – 24.03.26</div></div>
+              <div class="ccm"><div class="ccm-label">Video dur.</div><div class="ccm-val">16.5s</div></div>
+            </div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;">
+              <span class="ctag ctag-hook">Social proof</span>
+              <span class="ctag ctag-mechanic">Short-form</span>
+              <span class="ctag ctag-stage">Launch</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;">
+        <span style="font-family:var(--fm);font-size:10px;color:var(--t2);">Showing top 5 of 126 active creatives · sorted by duration</span>
+        <button class="card-btn" style="display:flex;align-items:center;gap:6px;" onclick="toggleBrainstorm()">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M6 7c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M8 11v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Brainstorm new ideas
+        </button>
+      </div>
+
+      <!-- BRAINSTORM PANEL -->
+      <div class="brainstorm-panel" id="brainstorm-panel">
+        <div class="brainstorm-head">
+          <div class="brainstorm-title">💡 Creative brainstorm — based on Conquian Zingplay data gaps</div>
+          <button class="brainstorm-close" onclick="toggleBrainstorm()">×</button>
+        </div>
+        <div class="brainstorm-body">
+
+          <div class="idea-card">
+            <div class="idea-card-label">Untested format</div>
+            <div class="idea-card-title">Short-form TikTok-native ≤10s — card flip reveal</div>
+            <div class="idea-card-desc">Chỉ 23/388 creatives (6%) là ≤10s. TikTok hook format: mở đầu bằng kết quả bất ngờ (lật bài thắng lớn), không có intro. Hook: "Tôi vừa win 5 ván liên tiếp bằng trick này"</div>
+            <div class="idea-card-tags">
+              <span class="ctag ctag-hook">Win reveal</span>
+              <span class="ctag ctag-mechanic">≤10s</span>
+              <span class="ctag ctag-emotion">Excitement</span>
+            </div>
+          </div>
+
+          <div class="idea-card">
+            <div class="idea-card-label">Untested hook</div>
+            <div class="idea-card-title">Challenge/Puzzle hook — "Bạn có đánh được ván này không?"</div>
+            <div class="idea-card-desc">Không có Challenge hook trong data hiện tại. Show một hand bài khó, hỏi người xem nên đánh gì. Pause 2s để user suy nghĩ → reveal đáp án. Qualify intent: chỉ người biết chơi Conquian mới engage.</div>
+            <div class="idea-card-tags">
+              <span class="ctag ctag-hook">Challenge</span>
+              <span class="ctag ctag-mechanic">Interactive</span>
+              <span class="ctag ctag-emotion">Competitiveness</span>
+            </div>
+          </div>
+
+          <div class="idea-card">
+            <div class="idea-card-label">Untested market</div>
+            <div class="idea-card-title">US-specific creative — English, higher stakes, IAP focus</div>
+            <div class="idea-card-desc">US = 84% revenue nhưng tất cả creatives hiện tại dùng chung với MX. Test creative tiếng Anh, nhắm US audience với messaging về tournament/competition, higher buy-in mechanics. Expected RPD $1.06 vs $0.09 MX.</div>
+            <div class="idea-card-tags">
+              <span class="ctag ctag-mechanic">English copy</span>
+              <span class="ctag ctag-emotion">Competitiveness</span>
+              <span class="ctag ctag-stage">Test</span>
+            </div>
+          </div>
+
+          <div class="idea-card">
+            <div class="idea-card-label">Refresh tired format</div>
+            <div class="idea-card-title">Variant của 27s gameplay video — đang chạy 226-359 ngày</div>
+            <div class="idea-card-desc">4 creatives 226-359 ngày đều là ~27s gameplay video. Thay vì tắt hoàn toàn, test fresh variant: same concept, khác opening 3s, khác nhạc nền, khác kết. Giữ proven format, giảm fatigue.</div>
+            <div class="idea-card-tags">
+              <span class="ctag ctag-hook">Gameplay demo</span>
+              <span class="ctag ctag-mechanic">27s video</span>
+              <span class="ctag ctag-warn">Replace decay</span>
+            </div>
+          </div>
+
+          <div class="idea-card">
+            <div class="idea-card-label">Untested channel</div>
+            <div class="idea-card-title">Google UAC với US audience — repurpose top Meta video</div>
+            <div class="idea-card-desc">0% budget trên Google UAC. Repurpose creative 01b2ddc (13s, scaling 72 ngày) sang Google UAC. US users có intent cao hơn khi search card games → lower CPI với higher RPD $1.06. Test budget nhỏ $500/week.</div>
+            <div class="idea-card-tags">
+              <span class="ctag ctag-mechanic">Google UAC</span>
+              <span class="ctag ctag-hook">Win reveal</span>
+              <span class="ctag ctag-stage">Test</span>
+            </div>
+          </div>
+
+          <div class="idea-card">
+            <div class="idea-card-label">Social proof variation</div>
+            <div class="idea-card-title">UGC-style: real MX player testimonial — "Chơi với bạn bè"</div>
+            <div class="idea-card-desc">Conquian là card game truyền thống ở Mexico — leverage nostalgia và social connection. Fake-UGC style: "Screen record" của người đang chơi với gia đình/bạn bè, VO tiếng Tây Ban Nha. Không có creative dạng này trong portfolio hiện tại.</div>
+            <div class="idea-card-tags">
+              <span class="ctag ctag-hook">Social proof</span>
+              <span class="ctag ctag-emotion">Nostalgia</span>
+              <span class="ctag ctag-mechanic">UGC-style</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /f1 -->
