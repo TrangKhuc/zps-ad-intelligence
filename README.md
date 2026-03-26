@@ -78,7 +78,7 @@ channel_stability: (1 − HHI) × 100, HHI = Σ(channel_share²)
 ## Current data snapshot (Mar 25, 2026)
 
 | Metric | Value |
-|--------|-------|
+| --- | --- |
 | CHI | 67.5 — At risk (active rate 43%) |
 | CREI | 72.2 — High momentum, declining engagement |
 | Total downloads | 283.6K (Jan–Mar 2026) |

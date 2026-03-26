@@ -1,24 +1,5 @@
 // ZPS Ad Intelligence — Main JavaScript
 
-const compData = {
-  'Garena Free Fire':   { chi:'74', cs:'up',   chi_s:'Healthy · above median',   crei:'61', cs2:'warn', crei_s:'Testing phase · volatile', imp:'8.4M', dl:'↑ 12%', dc:'up',   rev:'↓ 4%',  rc:'down', rank:'#8',  sent:'78%' },
-  'PUBG Mobile':        { chi:'81', cs:'up',   chi_s:'Strong · top quartile',    crei:'78', cs2:'up',   crei_s:'Scaling confidently',      imp:'12.1M',dl:'↑ 6%',  dc:'up',   rev:'↑ 9%',  rc:'up',   rank:'#5',  sent:'82%' },
-  'Stumble Guys':       { chi:'63', cs:'warn', chi_s:'Healthy · mid range',      crei:'88', cs2:'up',   crei_s:'Aggressive blitz mode',    imp:'6.2M', dl:'↑ 31%', dc:'up',   rev:'↑ 22%', rc:'up',   rank:'#3',  sent:'91%' },
-  'Zooba':              { chi:'49', cs:'warn', chi_s:'At risk · refresh slowing', crei:'38', cs2:'down', crei_s:'Defending · low momentum', imp:'1.1M', dl:'↓ 8%',  dc:'down', rev:'↓ 14%', rc:'down', rank:'#24', sent:'64%' },
-  'Last War: Survival': { chi:'72', cs:'up',   chi_s:'Healthy · scaling phase',  crei:'91', cs2:'up',   crei_s:'High momentum · scaling',  imp:'18.4M',dl:'↑ 44%', dc:'up',   rev:'↑ 67%', rc:'up',   rank:'#2',  sent:'74%' },
-};
-
-function selectComp(btn, name) {
-  document.querySelectorAll('.comp-chip').forEach(c => c.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('active-comp-name').textContent = name;
-  const d = compData[name]; if (!d) return;
-  set('v-chi', d.chi, d.cs); set('s-chi', d.chi_s);
-  set('v-crei', d.crei, d.cs2); set('s-crei', d.crei_s);
-  set('v-imp', d.imp); set('v-dl', d.dl, d.dc); set('v-rev', d.rev, d.rc);
-  set('v-rank', d.rank, 'neutral'); set('v-sent', d.sent, 'up');
-}
-
 function set(id, val, cls) {
   const el = document.getElementById(id); if (!el) return;
   el.textContent = val;
@@ -234,13 +215,14 @@ function switchChart(type, btn) {
   renderPills(type);
 }
 
-// Init charts when F1 tab is first opened
+// Init charts when F1/F2 tabs are first opened
 const origSwitchTab = switchTab;
 window.switchTab = function(id, btn) {
   origSwitchTab(id, btn);
   if (id === 'f1' && !chartInstances['c-format']) {
     setTimeout(initCharts, 50);
   }
+  if (id === 'f2') setTimeout(initF2Chart, 50);
 };
 
 // Also init if F1 is default visible (it's not, but just in case)
@@ -574,88 +556,6 @@ function initF2Chart() {
     }
   });
 }
-
-// Hook into tab switch to init F2 chart
-const _prevSwitchTab = window.switchTab;
-window.switchTab = function(id, btn) {
-  _prevSwitchTab(id, btn);
-  if (id === 'f2') setTimeout(initF2Chart, 50);
-};
-
-// ── DROPDOWN TOGGLE ──
-function toggleDrop(id) {
-  const wrap = document.getElementById(id);
-  const isOpen = wrap.classList.contains('open');
-  document.querySelectorAll('.fdrop-wrap.open').forEach(w => w.classList.remove('open'));
-  if (!isOpen) wrap.classList.add('open');
-}
-document.addEventListener('click', e => {
-  if (!e.target.closest('.fdrop-wrap')) {
-    document.querySelectorAll('.fdrop-wrap.open').forEach(w => w.classList.remove('open'));
-  }
-});
-function filterUpdate() {
-  document.querySelectorAll('.fdrop-wrap').forEach(wrap => {
-    const checked = wrap.querySelectorAll('input:checked').length;
-    const total   = wrap.querySelectorAll('input').length;
-    const btn = wrap.querySelector('.fdrop');
-    if (checked > 0 && checked < total) btn.classList.add('active');
-    else btn.classList.remove('active');
-  });
-}
-
-// ── BRAINSTORM TOGGLE ──
-function toggleBrainstorm() {
-  document.getElementById('brainstorm-panel').classList.toggle('open');
-}
-
-// ── F2 CHART INIT ──
-let f2ChartInited = false;
-function initF2Chart() {
-  if (f2ChartInited) return;
-  const el = document.getElementById('c-f2-dl');
-  if (!el) return;
-  f2ChartInited = true;
-  const labels = ['W1 Jan','W2 Jan','W3 Jan','W4 Jan','W1 Feb','W2 Feb','W3 Feb','W4 Feb','W1 Mar','W2 Mar','W3 Mar'];
-  new Chart(el.getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        { label: 'New creatives', data: [17,18,12,34,20,19,25,16,20,19,24],
-          backgroundColor: labels.map((_,i)=>i<5?'rgba(91,80,232,0.65)':'rgba(91,80,232,0.4)'),
-          borderRadius: 3, yAxisID: 'y', order: 2 },
-        { label: 'Downloads (K)', data: [28.6,24.0,26.4,31.3,30.4,22.5,24.4,21.7,19.8,19.7,18.8],
-          type:'line', borderColor:'rgba(224,64,64,0.9)', backgroundColor:'transparent',
-          tension:0.35, pointRadius:3,
-          pointBackgroundColor: labels.map((_,i)=>i<5?'rgba(91,80,232,1)':'rgba(224,64,64,1)'),
-          borderWidth:2, yAxisID:'y2', order:1 }
-      ]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:false,
-      plugins: {
-        legend:{ display:true, position:'bottom', labels:{font:{family:'DM Mono',size:9},color:'#8888aa',boxWidth:10,padding:14} },
-        tooltip:{ backgroundColor:'#1a1a2e', titleFont:{family:'DM Mono',size:10}, bodyFont:{family:'DM Sans',size:11}, padding:10, cornerRadius:6 }
-      },
-      scales: {
-        x:{ grid:{display:false}, ticks:{font:{family:'DM Mono',size:8},color:'#bbbbd0'} },
-        y:{ position:'left', grid:{color:'#f0f0f5'},
-            title:{display:true,text:'New creatives',font:{family:'DM Mono',size:8},color:'#bbbbd0'},
-            ticks:{stepSize:5,font:{family:'DM Mono',size:8},color:'#bbbbd0'} },
-        y2:{ position:'right', grid:{display:false},
-             title:{display:true,text:'Downloads (K)',font:{family:'DM Mono',size:8},color:'#bbbbd0'},
-             ticks:{font:{family:'DM Mono',size:8},color:'#bbbbd0'} }
-      }
-    }
-  });
-}
-const _prevSwitchTab = window.switchTab;
-window.switchTab = function(id, btn) {
-  _prevSwitchTab(id, btn);
-  if (id === 'f2') setTimeout(initF2Chart, 50);
-};
-
 
 // ══════════════════════════════════════════════════════
 // AUTO-LABEL ENGINE — Claude API built-in (no key needed)

@@ -17,7 +17,7 @@
               <div class="pb-name">Ultra-long creative lifecycle: 359–498 ngày vẫn active</div>
               <div class="pb-genre">Toàn bộ networks · 5 images (498d) + 4 videos (359d) · Observed</div>
             </div>
-            <div class="conf-ring" style="border-color:var(--coral);color:var(--coral);">⚠</div>
+            <div class="conf-ring" style="border-color:var(--coral);color:var(--coral);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
           </div>
           <div class="pb-meta">
             <div class="pbm"><div class="pbm-label">Format</div><div class="pbm-val">Image + Video</div></div>
@@ -39,7 +39,7 @@
               <div class="pb-name">High creative volume không correlate với download growth</div>
               <div class="pb-genre">Jan–Mar 2026 · 242 creatives launched · Downloads giảm đều</div>
             </div>
-            <div class="conf-ring" style="border-color:var(--coral);color:var(--coral);">⚠</div>
+            <div class="conf-ring" style="border-color:var(--coral);color:var(--coral);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
           </div>
           <div class="pb-meta">
             <div class="pbm"><div class="pbm-label">Volume</div><div class="pbm-val">20.2 / tuần</div></div>
@@ -61,7 +61,7 @@
               <div class="pb-name">100% Meta dependency — không có channel diversification</div>
               <div class="pb-genre">Facebook + Instagram + Meta Audience Network only · Jan–Mar 2026</div>
             </div>
-            <div class="conf-ring" style="border-color:var(--amber);color:var(--amber);">!</div>
+            <div class="conf-ring" style="border-color:var(--amber);color:var(--amber);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
           </div>
           <div class="pb-meta">
             <div class="pbm"><div class="pbm-label">Networks</div><div class="pbm-val outcome-bad">1 ecosystem</div></div>
@@ -83,7 +83,7 @@
               <div class="pb-name">MX/US market split: volume vs value mismatch nghiêm trọng</div>
               <div class="pb-genre">Downloads Detailed · Jan–Mar 2026 · RPD gap 12×</div>
             </div>
-            <div class="conf-ring" style="border-color:var(--accent);color:var(--accent);">→</div>
+            <div class="conf-ring" style="border-color:var(--accent);color:var(--accent);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
           </div>
           <div class="pb-meta">
             <div class="pbm"><div class="pbm-label">MX downloads</div><div class="pbm-val">195.6K (69%)</div></div>
@@ -105,7 +105,7 @@
               <div class="pb-name">Data gaps — những gì Sensor Tower không cung cấp và cần bổ sung</div>
               <div class="pb-genre">Sensor Tower Creative Gallery + Download Channel · limitations identified</div>
             </div>
-            <div class="conf-ring" style="border-color:var(--t3);color:var(--t2);">?</div>
+            <div class="conf-ring" style="border-color:var(--t3);color:var(--t2);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
             <div>
@@ -708,80 +708,6 @@ function initF2Chart() {
 }
 
 // Hook into tab switch to init F2 chart
-const _prevSwitchTab = window.switchTab;
-window.switchTab = function(id, btn) {
-  _prevSwitchTab(id, btn);
-  if (id === 'f2') setTimeout(initF2Chart, 50);
-};
-
-// ── DROPDOWN TOGGLE ──
-function toggleDrop(id) {
-  const wrap = document.getElementById(id);
-  const isOpen = wrap.classList.contains('open');
-  document.querySelectorAll('.fdrop-wrap.open').forEach(w => w.classList.remove('open'));
-  if (!isOpen) wrap.classList.add('open');
-}
-document.addEventListener('click', e => {
-  if (!e.target.closest('.fdrop-wrap')) {
-    document.querySelectorAll('.fdrop-wrap.open').forEach(w => w.classList.remove('open'));
-  }
-});
-function filterUpdate() {
-  document.querySelectorAll('.fdrop-wrap').forEach(wrap => {
-    const checked = wrap.querySelectorAll('input:checked').length;
-    const total   = wrap.querySelectorAll('input').length;
-    const btn = wrap.querySelector('.fdrop');
-    if (checked > 0 && checked < total) btn.classList.add('active');
-    else btn.classList.remove('active');
-  });
-}
-
-// ── BRAINSTORM TOGGLE ──
-function toggleBrainstorm() {
-  document.getElementById('brainstorm-panel').classList.toggle('open');
-}
-
-// ── F2 CHART INIT ──
-let f2ChartInited = false;
-function initF2Chart() {
-  if (f2ChartInited) return;
-  const el = document.getElementById('c-f2-dl');
-  if (!el) return;
-  f2ChartInited = true;
-  const labels = ['W1 Jan','W2 Jan','W3 Jan','W4 Jan','W1 Feb','W2 Feb','W3 Feb','W4 Feb','W1 Mar','W2 Mar','W3 Mar'];
-  new Chart(el.getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        { label: 'New creatives', data: [17,18,12,34,20,19,25,16,20,19,24],
-          backgroundColor: labels.map((_,i)=>i<5?'rgba(91,80,232,0.65)':'rgba(91,80,232,0.4)'),
-          borderRadius: 3, yAxisID: 'y', order: 2 },
-        { label: 'Downloads (K)', data: [28.6,24.0,26.4,31.3,30.4,22.5,24.4,21.7,19.8,19.7,18.8],
-          type:'line', borderColor:'rgba(224,64,64,0.9)', backgroundColor:'transparent',
-          tension:0.35, pointRadius:3,
-          pointBackgroundColor: labels.map((_,i)=>i<5?'rgba(91,80,232,1)':'rgba(224,64,64,1)'),
-          borderWidth:2, yAxisID:'y2', order:1 }
-      ]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:false,
-      plugins: {
-        legend:{ display:true, position:'bottom', labels:{font:{family:'DM Mono',size:9},color:'#8888aa',boxWidth:10,padding:14} },
-        tooltip:{ backgroundColor:'#1a1a2e', titleFont:{family:'DM Mono',size:10}, bodyFont:{family:'DM Sans',size:11}, padding:10, cornerRadius:6 }
-      },
-      scales: {
-        x:{ grid:{display:false}, ticks:{font:{family:'DM Mono',size:8},color:'#bbbbd0'} },
-        y:{ position:'left', grid:{color:'#f0f0f5'},
-            title:{display:true,text:'New creatives',font:{family:'DM Mono',size:8},color:'#bbbbd0'},
-            ticks:{stepSize:5,font:{family:'DM Mono',size:8},color:'#bbbbd0'} },
-        y2:{ position:'right', grid:{display:false},
-             title:{display:true,text:'Downloads (K)',font:{family:'DM Mono',size:8},color:'#bbbbd0'},
-             ticks:{font:{family:'DM Mono',size:8},color:'#bbbbd0'} }
-      }
-    }
-  });
-}
 const _prevSwitchTab = window.switchTab;
 window.switchTab = function(id, btn) {
   _prevSwitchTab(id, btn);

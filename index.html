@@ -15,7 +15,7 @@
   ZPS Ad Intelligence — Component Map
   =====================================
   Edit individual components in src/components/
-  Edit data in src/data/conquian.js
+  Data reference in src/data/conquian.js (not imported — live data is in main.js)
   Edit styles in src/styles/main.css
   Edit JS logic in src/main.js
 
@@ -62,9 +62,10 @@
   async function loadComponent(path) {
     try {
       const res = await fetch(path);
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
       return await res.text();
     } catch (e) {
-      console.warn('Could not load:', path);
+      console.warn('Could not load:', path, e.message);
       return `<!-- Failed to load ${path} -->`;
     }
   }

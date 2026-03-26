@@ -1,0 +1,12 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.claude/
+*.excalidraw
+*.mockup.html
+
+# Dependencies
+node_modules/
+.vercel
