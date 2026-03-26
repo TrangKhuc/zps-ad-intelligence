@@ -1,0 +1,31 @@
+<!-- CompetitorSelector -->
+<!-- COMPETITOR SELECTOR -->
+    <div class="comp-selector">
+      <div class="comp-selector-top">
+        <span class="step-label">Step 1</span>
+        <span class="comp-selector-title">Select app</span>
+        <span class="comp-selector-hint">— upload data via button above hoặc chọn từ watchlist</span>
+      </div>
+      <div class="comp-row">
+        <div class="search-box">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="#bbbbd0" stroke-width="1.5"/><path d="M10 10L14 14" stroke="#bbbbd0" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <input type="text" placeholder="Search app name or App ID…">
+        </div>
+        <span class="watch-label">Watchlist</span>
+        <button class="comp-chip active" onclick="selectComp(this,'Conquian Zingplay','#5b50e8')">
+          <span class="comp-dot" style="background:#5b50e8"></span>
+          Conquian Zingplay
+          <span class="chip-genre">Card · Real data</span>
+        </button>
+        <button class="comp-chip" onclick="selectComp(this,'Zynga Poker','#0d9e72')">
+          <span class="comp-dot" style="background:#0d9e72"></span>
+          Zynga Poker
+          <span class="chip-genre">Card · Competitor</span>
+        </button>
+        <button class="comp-chip" onclick="selectComp(this,'Coin Master','#c97a10')">
+          <span class="comp-dot" style="background:#c97a10"></span>
+          Coin Master
+          <span class="chip-genre">Casual · Competitor</span>
+        </button>
+      </div>
+    </div>

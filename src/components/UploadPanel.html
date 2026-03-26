@@ -1,0 +1,36 @@
+<!-- UploadPanel -->
+<!-- UPLOAD PANEL -->
+  <div class="upload-panel" id="upload-panel" style="grid-column:1/-1;">
+    <div class="upload-title">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 11V3M4 6l4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 13h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Upload Sensor Tower exports
+      <span style="font-family:var(--fm);font-size:10px;color:var(--t2);font-weight:400;">— 3 CSV files từ Sensor Tower Ad Intelligence</span>
+    </div>
+    <div class="upload-grid">
+      <div class="upload-slot" id="slot-cg" onclick="document.getElementById('file-cg').click()">
+        <input type="file" id="file-cg" accept=".csv" onchange="handleFile(this,'cg')">
+        <div class="upload-slot-icon">🎬</div>
+        <div class="upload-slot-label">Creative Gallery</div>
+        <div class="upload-slot-hint">Unified Creative Gallery · Detailed.csv</div>
+        <div class="upload-slot-status" id="status-cg"></div>
+      </div>
+      <div class="upload-slot" id="slot-dch" onclick="document.getElementById('file-dch').click()">
+        <input type="file" id="file-dch" accept=".csv" onchange="handleFile(this,'dch')">
+        <div class="upload-slot-icon">📊</div>
+        <div class="upload-slot-label">Download Channel</div>
+        <div class="upload-slot-hint">Download Channel by Absolute Downloads.csv</div>
+        <div class="upload-slot-status" id="status-dch"></div>
+      </div>
+      <div class="upload-slot" id="slot-dl" onclick="document.getElementById('file-dl').click()">
+        <input type="file" id="file-dl" accept=".csv" onchange="handleFile(this,'dl')">
+        <div class="upload-slot-icon">📥</div>
+        <div class="upload-slot-label">Downloads Detailed</div>
+        <div class="upload-slot-hint">Unified Downloads · Detailed.csv</div>
+        <div class="upload-slot-status" id="status-dl"></div>
+      </div>
+    </div>
+    <div class="upload-actions">
+      <button class="upload-btn-primary" id="analyze-btn" onclick="analyzeUploads()" disabled>Analyze & update tool</button>
+      <span class="upload-note">Upload cả 3 files để enable. Không cần internet — xử lý hoàn toàn trong browser.</span>
+    </div>
+  </div>
