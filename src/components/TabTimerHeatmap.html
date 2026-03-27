@@ -8,75 +8,22 @@
           <div class="card-head">
             <div>
               <div class="card-title">Creative launch timeline</div>
-              <div class="card-sub">New creatives per week · Jan–Mar 2026 · Sensor Tower</div>
+              <div class="card-sub">New creatives per week · Sensor Tower</div>
             </div>
           </div>
           <div class="card-body">
-            <div style="font-family:var(--fm);font-size:9px;color:var(--t2);margin-bottom:10px;">Consistent 16-25 creatives/week — không có blitz điển hình, testing đều đặn liên tục</div>
+            <div style="font-family:var(--fm);font-size:9px;color:var(--t2);margin-bottom:10px;" id="f2-timeline-summary">Loading…</div>
 
-            <div class="tl-item">
-              <div class="tl-dot d-active"></div>
-              <div class="tl-body">
-                <div class="tl-name">W Mar 16-22 — 18 new creatives</div>
-                <div class="tl-meta">Most recent complete week</div>
-                <div class="tl-tags"><span class="ch-tag hot">Facebook</span><span class="ch-tag hot">Instagram</span><span class="ch-tag">MAN</span></div>
+            <div id="f2-timeline-container">
+              <div class="tl-item">
+                <div class="tl-dot d-active"></div>
+                <div class="tl-body">
+                  <div class="tl-name">—</div>
+                  <div class="tl-meta">Waiting for data…</div>
+                </div>
+                <div class="tl-spend">—</div>
               </div>
-              <div class="tl-spend">18 creatives</div>
-            </div>
-            <div class="tl-item">
-              <div class="tl-dot d-active"></div>
-              <div class="tl-body">
-                <div class="tl-name">W Mar 9-15 — 24 new creatives</div>
-                <div class="tl-meta">Slight uptick vs prior week</div>
-                <div class="tl-tags"><span class="ch-tag hot">Facebook</span><span class="ch-tag">Instagram</span><span class="ch-tag">MAN</span></div>
-              </div>
-              <div class="tl-spend">24 creatives</div>
-            </div>
-            <div class="tl-item">
-              <div class="tl-dot d-active"></div>
-              <div class="tl-body">
-                <div class="tl-name">W Mar 2-8 — 19 new creatives</div>
-                <div class="tl-meta">Steady pace</div>
-                <div class="tl-tags"><span class="ch-tag hot">Facebook</span><span class="ch-tag">Instagram</span><span class="ch-tag">MAN</span></div>
-              </div>
-              <div class="tl-spend">19 creatives</div>
-            </div>
-            <div class="tl-item">
-              <div class="tl-dot d-active"></div>
-              <div class="tl-body">
-                <div class="tl-name">W Feb 23 - Mar 1 — 20 new creatives</div>
-                <div class="tl-meta">Consistent with Feb pattern</div>
-                <div class="tl-tags"><span class="ch-tag hot">Facebook</span><span class="ch-tag">Instagram</span><span class="ch-tag">MAN</span></div>
-              </div>
-              <div class="tl-spend">20 creatives</div>
-            </div>
-            <div class="tl-item">
-              <div class="tl-dot d-blitz"></div>
-              <div class="tl-body">
-                <div class="tl-name">W Feb 9-15 — 25 new creatives ⬆ peak</div>
-                <div class="tl-meta">Highest week in Feb — possible content push</div>
-                <div class="tl-tags"><span class="ch-tag hot">Facebook</span><span class="ch-tag hot">Instagram</span><span class="ch-tag">MAN</span></div>
-              </div>
-              <div class="tl-spend">25 creatives</div>
-            </div>
-            <div class="tl-item">
-              <div class="tl-dot d-decay"></div>
-              <div class="tl-body">
-                <div class="tl-name">W Jan 19-25 — 34 new creatives ⬆ highest</div>
-                <div class="tl-meta">Peak week toàn period — download không spike tương ứng</div>
-                <div class="tl-tags"><span class="ch-tag hot">Facebook</span><span class="ch-tag">Instagram</span><span class="ch-tag">MAN</span></div>
-              </div>
-              <div class="tl-spend">34 creatives</div>
-            </div>
-            <div class="tl-item">
-              <div class="tl-dot d-decay"></div>
-              <div class="tl-body">
-                <div class="tl-name">W Jan 5-11 — 18 new creatives</div>
-                <div class="tl-meta">Period start — baseline</div>
-                <div class="tl-tags"><span class="ch-tag">Facebook</span><span class="ch-tag">Instagram</span><span class="ch-tag">MAN</span></div>
-              </div>
-              <div class="tl-spend">18 creatives</div>
-            </div>
+            </div><!-- /f2-timeline-container -->
           </div>
         </div>
 
@@ -88,7 +35,7 @@
             <div class="card-head">
               <div>
                 <div class="card-title">Weekly downloads trend</div>
-                <div class="card-sub">Total downloads vs Paid Display · Jan–Mar 2026</div>
+                <div class="card-sub">Total downloads vs New creatives</div>
               </div>
             </div>
             <div class="card-body">
@@ -100,50 +47,23 @@
             </div>
           </div>
 
-          <!-- Channel heatmap — real data -->
+          <!-- Channel heatmap -->
           <div class="card">
             <div class="card-head">
               <div>
                 <div class="card-title">Channel mix — downloads</div>
-                <div class="card-sub">Sensor Tower Download Channel · Jan–Mar 2026</div>
+                <div class="card-sub">Sensor Tower Download Channel</div>
               </div>
             </div>
             <div class="card-body" style="overflow-x:auto;">
-              <div class="hm" style="grid-template-columns:110px repeat(3,1fr) 54px;">
+              <div class="hm" id="f2-heatmap-container" style="grid-template-columns:110px repeat(3,1fr) 54px;">
                 <div></div>
-                <div class="hm-head">Jan</div><div class="hm-head">Feb</div><div class="hm-head">Mar*</div><div class="hm-head">Total</div>
-
-                <div class="hm-label">Organic Search</div>
-                <div class="hm-cell" style="background:rgba(91,80,232,.35);color:var(--accent);">54.9K</div>
-                <div class="hm-cell" style="background:rgba(91,80,232,.3);color:var(--accent);">41.9K</div>
-                <div class="hm-cell" style="background:rgba(91,80,232,.2);color:var(--accent);">26.5K</div>
-                <div class="hm-delta" style="color:var(--t1);font-size:10px;">123K</div>
-
-                <div class="hm-label">Paid Display</div>
-                <div class="hm-cell" style="background:rgba(13,158,114,.35);color:var(--green);">38.2K</div>
-                <div class="hm-cell" style="background:rgba(13,158,114,.28);color:var(--green);">35.5K</div>
-                <div class="hm-cell" style="background:rgba(13,158,114,.18);color:var(--green);">25.0K</div>
-                <div class="hm-delta" style="color:var(--t1);font-size:10px;">99K</div>
-
-                <div class="hm-label">Web Browser</div>
-                <div class="hm-cell" style="background:rgba(36,114,200,.2);color:var(--blue);">7.9K</div>
-                <div class="hm-cell" style="background:rgba(36,114,200,.2);color:var(--blue);">7.9K</div>
-                <div class="hm-cell" style="background:rgba(36,114,200,.12);color:var(--blue);">3.5K</div>
-                <div class="hm-delta" style="color:var(--t1);font-size:10px;">19K</div>
-
-                <div class="hm-label">Organic Browse</div>
-                <div class="hm-cell" style="background:rgba(201,122,16,.2);color:var(--amber);">13.4K</div>
-                <div class="hm-cell" style="background:rgba(201,122,16,.18);color:var(--amber);">11.0K</div>
-                <div class="hm-cell" style="background:rgba(201,122,16,.12);color:var(--amber);">6.3K</div>
-                <div class="hm-delta" style="color:var(--t1);font-size:10px;">31K</div>
-
-                <div class="hm-label">Paid Search</div>
-                <div class="hm-cell" style="background:rgba(187,187,208,.25);color:var(--t2);">4.6K</div>
-                <div class="hm-cell" style="background:rgba(187,187,208,.25);color:var(--t2);">4.6K</div>
-                <div class="hm-cell" style="background:rgba(187,187,208,.15);color:var(--t2);">2.4K</div>
-                <div class="hm-delta" style="color:var(--t1);font-size:10px;">12K</div>
+                <div class="hm-head">—</div><div class="hm-head">—</div><div class="hm-head">—</div><div class="hm-head">Total</div>
+                <div class="hm-label">—</div>
+                <div class="hm-cell">—</div><div class="hm-cell">—</div><div class="hm-cell">—</div>
+                <div class="hm-delta">—</div>
               </div>
-              <div style="font-family:var(--fm);font-size:9px;color:var(--t3);margin-top:8px;">* Mar partial (1-23). Tất cả channels giảm đồng đều — không phải vấn đề của 1 channel cụ thể.</div>
+              <div style="font-family:var(--fm);font-size:9px;color:var(--t3);margin-top:8px;">Data populates on app selection or CSV upload.</div>
             </div>
           </div>
         </div>
@@ -152,7 +72,7 @@
       <div class="note">
         <div class="note-label">Analyst note — Timer / Channel Mix</div>
         <div class="note-text">
-          Pattern quan trọng nhất: <strong>tất cả channels đều giảm song song</strong> từ Jan → Mar, không có channel nào bù đắp. Điều này loại trừ khả năng vấn đề là do 1 channel cụ thể (như Meta CPM tăng) — nguyên nhân nhiều khả năng là <strong>creative fatigue hoặc audience saturation</strong> trên MX market. Organic Search (43%) vẫn là kênh lớn nhất và giảm chậm hơn Paid Display — nếu download giảm là do creative fatigue thì Organic sẽ không bị ảnh hưởng nhiều, nhưng nó cũng đang giảm → vấn đề có thể sâu hơn ở product level.
+          Select a competitor or upload CSV data to see channel analysis and creative timeline insights.
         </div>
       </div>
     </div><!-- /f2 -->

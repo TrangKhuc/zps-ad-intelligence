@@ -43,9 +43,9 @@
         <div class="al-body">
           <div class="al-controls">
             <select id="al-scope" class="al-scope-sel">
-              <option value="active">Active now (126 creatives)</option>
-              <option value="scaling">Scaling + Testing (150)</option>
-              <option value="all">All 388 creatives</option>
+              <option value="active">Active now</option>
+              <option value="scaling">Scaling + Testing</option>
+              <option value="all">All creatives</option>
               <option value="top10">Top 10 (quick test)</option>
             </select>
             <button class="al-run-btn" id="al-run-btn" onclick="runAutoLabel()">
@@ -90,12 +90,12 @@
           <div style="display:flex;gap:20px;align-items:center;">
             <div style="text-align:right;">
               <div style="font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;">CHI</div>
-              <div style="font-family:var(--fd);font-size:26px;font-weight:800;color:var(--green);letter-spacing:-.03em;line-height:1;">74 <span class="delta-badge down" style="font-size:9px;vertical-align:middle;">↓3</span></div>
+              <div id="f1-chi-big" style="font-family:var(--fd);font-size:26px;font-weight:800;color:var(--t3);letter-spacing:-.03em;line-height:1;">—</div>
             </div>
             <div style="width:1px;height:36px;background:var(--border);"></div>
             <div style="text-align:right;">
               <div style="font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;">CREI</div>
-              <div style="font-family:var(--fd);font-size:26px;font-weight:800;color:var(--amber);letter-spacing:-.03em;line-height:1;">61 <span class="delta-badge down" style="font-size:9px;vertical-align:middle;">↓19</span></div>
+              <div id="f1-crei-big" style="font-family:var(--fd);font-size:26px;font-weight:800;color:var(--t3);letter-spacing:-.03em;line-height:1;">—</div>
             </div>
           </div>
         </div>
@@ -118,26 +118,26 @@
               <div class="fp-row"><div class="fp-sub">Refresh cadence</div><div class="fp-formula">min(genre_median_refresh / avg_days_between_launches, 1) × 100</div><div class="fp-weight">×20%</div></div>
               <div class="fp-note">Ví dụ tính: 80×0.30 + 100×0.25 + 62×0.25 + 58×0.20 = 24 + 25 + 15.5 + 11.6 = <strong>76.1</strong> → smoothed display: 74</div>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--border);">
+            <div id="f1-chi-subs" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--border);">
               <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px 10px 0;border-right:1px solid var(--border);border-bottom:none;">
                 <div class="chi-label">Active run rate</div>
-                <div class="chi-reason">43% active in 30d window</div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--coral)">43</span><span class="delta-badge down">low</span></div>
+                <div class="chi-reason" id="f1-active-reason">—</div>
+                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--t3)" id="f1-active-score">—</span><span class="delta-badge" id="f1-active-delta"></span></div>
               </div>
               <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px;border-right:1px solid var(--border);border-bottom:none;">
                 <div class="chi-label">Hook diversity</div>
-                <div class="chi-reason">5/5 categories · max</div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--green)">100</span><span class="delta-badge flat">→0</span></div>
+                <div class="chi-reason" id="f1-hook-reason">—</div>
+                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--t3)" id="f1-hook-score">—</span><span class="delta-badge" id="f1-hook-delta"></span></div>
               </div>
               <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px;border-right:1px solid var(--border);border-bottom:none;">
                 <div class="chi-label">Outperform rate</div>
-                <div class="chi-reason">62% &gt; 15d median</div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--amber)">62</span><span class="delta-badge down">↓8</span></div>
+                <div class="chi-reason" id="f1-outperform-reason">—</div>
+                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--t3)" id="f1-outperform-score">—</span><span class="delta-badge" id="f1-outperform-delta"></span></div>
               </div>
               <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 0 10px 14px;border-bottom:none;">
                 <div class="chi-label">Refresh cadence</div>
-                <div class="chi-reason">1 per 11d · median 7d</div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--amber)">58</span><span class="delta-badge down">↓5</span></div>
+                <div class="chi-reason" id="f1-refresh-reason">—</div>
+                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--t3)" id="f1-refresh-score">—</span><span class="delta-badge" id="f1-refresh-delta"></span></div>
               </div>
             </div>
           </div>
@@ -158,21 +158,21 @@
               <div class="fp-row"><div class="fp-sub">Channel stability</div><div class="fp-formula">(1 − HHI) × 100, HHI = Σ(channel_share²) — cao = concentrated</div><div class="fp-weight">×25%</div></div>
               <div class="fp-note">Reading combinations: Momentum↑ Engagement↑ Stability↑ = scaling confidently. Momentum↑ Stability↓ = blitz/volatile. Momentum↓ Stability↑ = defending. Hiện tại Garena: consolidation (momentum↓ post-blitz, engagement normalizing, channel pivot TikTok).</div>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--border);">
+            <div id="f1-crei-subs" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--border);">
               <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px 10px 0;border-right:1px solid var(--border);border-bottom:none;">
                 <div class="chi-label">Momentum</div>
-                <div class="chi-reason">24 new last week vs median 3</div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--green)">100</span><span class="delta-badge up">capped</span></div>
+                <div class="chi-reason" id="f1-momentum-reason">—</div>
+                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--t3)" id="f1-momentum-score">—</span><span class="delta-badge" id="f1-momentum-delta"></span></div>
               </div>
               <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px;border-right:1px solid var(--border);border-bottom:none;">
                 <div class="chi-label">Engagement delta</div>
-                <div class="chi-reason">Imp WoW −18% post-blitz</div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--amber)">48</span><span class="delta-badge down">↓22</span></div>
+                <div class="chi-reason" id="f1-engagement-reason">—</div>
+                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--t3)" id="f1-engagement-score">—</span><span class="delta-badge" id="f1-engagement-delta"></span></div>
               </div>
               <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 0 10px 14px;border-bottom:none;">
                 <div class="chi-label">Channel stability</div>
-                <div class="chi-reason">HHI 0.32 — TikTok pivot</div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--blue)">68</span><span class="delta-badge flat">→+1</span></div>
+                <div class="chi-reason" id="f1-stability-reason">—</div>
+                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--t3)" id="f1-stability-score">—</span><span class="delta-badge" id="f1-stability-delta"></span></div>
               </div>
             </div>
           </div>
@@ -188,7 +188,7 @@
         <span class="date-pill">Today</span><span class="date-pill">7d</span>
         <span class="date-pill active">30d</span><span class="date-pill">90d</span>
         <span class="date-pill">All time</span>
-        <span style="font-size:11px;color:var(--t2);margin-left:8px;">126 active · sorted by duration</span>
+        <span style="font-size:11px;color:var(--t2);margin-left:8px;" id="f1-grid-count">— active · sorted by duration</span>
         <div class="grid-controls">
           <select class="sort-sel">
             <option>Duration (longest)</option>

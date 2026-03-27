@@ -3,59 +3,56 @@
     <div class="content active" id="tab-sum">
 
       <!-- Signal banner — real insight -->
-      <div class="signal-banner">
+      <div class="signal-banner" id="signal-banner">
         <div class="signal-banner-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
         <div class="signal-banner-body">
-          <div class="signal-headline">Downloads giảm 3 tháng liên tiếp (−15% Jan→Feb, pace −18% tháng 3) dù creative volume cao kỷ lục: 20 creatives/tuần</div>
-          <div class="signal-detail">
-            High CREI momentum (72.2) nhưng engagement delta âm (−4.7% WoW) — đang test nhiều nhưng không có winner nào scale được. Toàn bộ budget tập trung trên Meta ecosystem, không có TikTok hay Google UAC.
-            <span class="signal-link" onclick="switchTab('f1', document.querySelectorAll('.tab-btn')[1])">Xem creative breakdown →</span>
-          </div>
+          <div class="signal-headline" id="ov-signal-headline">Loading signal…</div>
+          <div class="signal-detail" id="ov-signal-detail">—</div>
         </div>
       </div>
 
       <!-- KPI mini cards -->
       <div class="kpi-mini-grid">
         <div class="kpi-mini">
-          <div class="kpi-mini-label">Total downloads · Jan–Mar</div>
-          <div class="kpi-mini-val">283.6K</div>
-          <div class="kpi-mini-sub" style="color:var(--red);">↓ pace accelerating</div>
+          <div class="kpi-mini-label">Total downloads</div>
+          <div class="kpi-mini-val" id="ov-total-dl">—</div>
+          <div class="kpi-mini-sub" id="ov-dl-sub">—</div>
         </div>
         <div class="kpi-mini">
-          <div class="kpi-mini-label">Revenue · Jan–Mar</div>
-          <div class="kpi-mini-val">$109K</div>
-          <div class="kpi-mini-sub">US $91.9K · MX $16.7K</div>
+          <div class="kpi-mini-label">Revenue</div>
+          <div class="kpi-mini-val" id="ov-total-rev">—</div>
+          <div class="kpi-mini-sub" id="ov-rev-sub">—</div>
         </div>
         <div class="kpi-mini">
           <div class="kpi-mini-label">Active creatives</div>
-          <div class="kpi-mini-val">126<span style="font-size:13px;color:var(--t2);font-weight:400;">/388</span></div>
-          <div class="kpi-mini-sub" style="color:var(--amber);">32% active rate · 160 in decay</div>
+          <div class="kpi-mini-val" id="ov-active-creatives">—</div>
+          <div class="kpi-mini-sub" id="ov-active-sub">—</div>
         </div>
         <div class="kpi-mini">
           <div class="kpi-mini-label">Avg new creatives/week</div>
-          <div class="kpi-mini-val">20.2</div>
-          <div class="kpi-mini-sub" style="color:var(--green);">6.7× casual median (3/wk)</div>
+          <div class="kpi-mini-val" id="ov-avg-wk">—</div>
+          <div class="kpi-mini-sub" id="ov-avg-wk-sub">—</div>
         </div>
       </div>
 
       <!-- 3-col signals -->
       <div class="summary-grid">
         <div class="summary-card" onclick="switchTab('f1', document.querySelectorAll('.tab-btn')[1])">
-          <div class="sc-label">Creative Profile · CHI 67.5</div>
-          <div class="sc-headline">160/388 creatives ở Decay stage — 41%. Có creatives đã chạy 226–359 ngày vẫn còn active.</div>
-          <div class="sc-meta">Video 80% · Image 20% · Chỉ Meta ecosystem · 21-30s dominant format</div>
+          <div class="sc-label" id="ov-sc1-label">Creative Profile</div>
+          <div class="sc-headline" id="ov-sc1-headline">—</div>
+          <div class="sc-meta" id="ov-sc1-meta">—</div>
           <span class="sc-arrow">Xem chi tiết creative mix →</span>
         </div>
         <div class="summary-card" onclick="switchTab('f2', document.querySelectorAll('.tab-btn')[2])">
-          <div class="sc-label">Download trend · CREI 72.2</div>
-          <div class="sc-headline">Organic Search (43%) vẫn là kênh lớn nhất, Paid Display (35%) đang giảm đều từ tháng 1 sang tháng 3.</div>
-          <div class="sc-meta">Jan 119K → Feb 101K → Mar pace 83K · WoW −4.7%</div>
+          <div class="sc-label" id="ov-sc2-label">Download trend</div>
+          <div class="sc-headline" id="ov-sc2-headline">—</div>
+          <div class="sc-meta" id="ov-sc2-meta">—</div>
           <span class="sc-arrow">Xem heatmap channel mix →</span>
         </div>
         <div class="summary-card" onclick="switchTab('f3', document.querySelectorAll('.tab-btn')[3])">
-          <div class="sc-label">Market concentration</div>
-          <div class="sc-headline">MX: 69% downloads nhưng 15% revenue. US: 31% downloads nhưng 84% revenue. RPD gap ~12×.</div>
-          <div class="sc-meta">52 countries tracked · Top 5 chiếm 99% downloads</div>
+          <div class="sc-label" id="ov-sc3-label">Market concentration</div>
+          <div class="sc-headline" id="ov-sc3-headline">—</div>
+          <div class="sc-meta" id="ov-sc3-meta">—</div>
           <span class="sc-arrow">Xem playbook recommendations →</span>
         </div>
       </div>
@@ -66,40 +63,16 @@
           <div class="card-head">
             <div>
               <div class="card-title">Top markets by downloads</div>
-              <div class="card-sub">Jan 1 – Mar 23, 2026 · Sensor Tower</div>
+              <div class="card-sub" id="ov-date-range">—</div>
             </div>
           </div>
           <div class="card-body">
-            <div class="country-bar">
-              <div class="cb-row">
-                <div class="cb-label">MX</div>
-                <div class="cb-track"><div class="cb-fill" style="width:100%;background:var(--accent);"></div></div>
-                <div class="cb-val">195,619</div>
-              </div>
-              <div class="cb-row">
-                <div class="cb-label">US</div>
-                <div class="cb-track"><div class="cb-fill" style="width:44%;background:var(--blue);"></div></div>
-                <div class="cb-val">86,996</div>
-              </div>
-              <div class="cb-row">
-                <div class="cb-label">SV</div>
-                <div class="cb-track"><div class="cb-fill" style="width:0.2%;background:var(--t3);"></div></div>
-                <div class="cb-val">331</div>
-              </div>
-              <div class="cb-row">
-                <div class="cb-label">GT</div>
-                <div class="cb-track"><div class="cb-fill" style="width:0.1%;background:var(--t3);"></div></div>
-                <div class="cb-val">204</div>
-              </div>
-              <div class="cb-row">
-                <div class="cb-label">AR</div>
-                <div class="cb-track"><div class="cb-fill" style="width:0.1%;background:var(--t3);"></div></div>
-                <div class="cb-val">173</div>
-              </div>
+            <div class="country-bar" id="ov-country-bars">
+              <div class="cb-row"><div class="cb-label">—</div><div class="cb-track"><div class="cb-fill" style="width:0%;"></div></div><div class="cb-val">—</div></div>
             </div>
             <div class="note" style="margin-top:14px;">
               <div class="note-label">Signal</div>
-              <div class="note-text">MX và US chiếm <strong>99.1% tổng downloads</strong> — concentration risk rất cao. 50 countries còn lại chỉ đóng góp 0.9%.</div>
+              <div class="note-text" id="ov-country-signal">—</div>
             </div>
           </div>
         </div>
@@ -108,7 +81,7 @@
           <div class="card-head">
             <div>
               <div class="card-title">Revenue vs Downloads mismatch</div>
-              <div class="card-sub">RPD gap giữa US và MX</div>
+              <div class="card-sub">RPD gap analysis</div>
             </div>
           </div>
           <div class="card-body">
@@ -116,66 +89,68 @@
               <div style="font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Revenue share</div>
               <div class="cb-row">
                 <div class="cb-label">US</div>
-                <div class="cb-track"><div class="cb-fill" style="width:100%;background:var(--green);"></div></div>
-                <div class="cb-val" style="color:var(--green);">$91.9K</div>
+                <div class="cb-track"><div class="cb-fill" style="width:0%;background:var(--green);"></div></div>
+                <div class="cb-val" id="ov-us-rev" style="color:var(--green);">—</div>
               </div>
               <div class="cb-row">
                 <div class="cb-label">MX</div>
-                <div class="cb-track"><div class="cb-fill" style="width:18%;background:var(--blue);"></div></div>
-                <div class="cb-val">$16.7K</div>
+                <div class="cb-track"><div class="cb-fill" style="width:0%;background:var(--blue);"></div></div>
+                <div class="cb-val" id="ov-mx-rev">—</div>
               </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
               <div style="background:var(--page);border-radius:6px;padding:10px;">
                 <div style="font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;margin-bottom:4px;">US RPD est.</div>
-                <div style="font-family:var(--fd);font-size:18px;font-weight:700;color:var(--green);">$1.06</div>
+                <div style="font-family:var(--fd);font-size:18px;font-weight:700;color:var(--green);" id="ov-us-rpd">—</div>
                 <div style="font-family:var(--fm);font-size:9px;color:var(--t2);">per download</div>
               </div>
               <div style="background:var(--page);border-radius:6px;padding:10px;">
                 <div style="font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;margin-bottom:4px;">MX RPD est.</div>
-                <div style="font-family:var(--fd);font-size:18px;font-weight:700;color:var(--amber);">$0.09</div>
-                <div style="font-family:var(--fm);font-size:9px;color:var(--t2);">per download · 12× gap</div>
+                <div style="font-family:var(--fd);font-size:18px;font-weight:700;color:var(--amber);" id="ov-mx-rpd">—</div>
+                <div style="font-family:var(--fm);font-size:9px;color:var(--t2);" id="ov-rpd-gap">—</div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Action Queue — real recommendations -->
+      <!-- Action Queue -->
       <div class="aq">
-        <div class="aq-head">Recommended next steps — dựa trên Sensor Tower data</div>
+        <div class="aq-head">Recommended next steps</div>
+        <div id="ov-action-queue">
         <div class="aq-tier">
           <div class="aq-tier-label red"><span class="status-dot critical"></span> Tuần này</div>
           <div class="aq-item">
             <span class="aq-action">Audit và pause creatives có duration >120 ngày còn đang chạy</span>
-            <span class="aq-outcome">→ có ít nhất 6 creatives từ Aug-Sep 2025 (226–359 ngày) vẫn active — frequency fatigue và budget drain</span>
+            <span class="aq-outcome" id="ov-aq1">—</span>
           </div>
           <div class="aq-item">
-            <span class="aq-action">Review lý do downloads giảm 3 tháng liên tiếp dù creative volume cao</span>
-            <span class="aq-outcome">→ 20 creatives/tuần nhưng WoW downloads âm — có thể creative quality thấp hoặc audience saturation trên Meta</span>
+            <span class="aq-action">Review lý do downloads giảm dù creative volume cao</span>
+            <span class="aq-outcome" id="ov-aq2">—</span>
           </div>
         </div>
         <div class="aq-tier">
           <div class="aq-tier-label yellow"><span class="status-dot warn"></span> 2 tuần tới</div>
           <div class="aq-item">
-            <span class="aq-action">Test mở rộng sang TikTok hoặc Google UAC với US-targeted creatives</span>
-            <span class="aq-outcome">→ US RPD $1.06 vs MX $0.09 — US là priority nhưng đang thiếu channel diversity hoàn toàn</span>
+            <span class="aq-action">Test mở rộng sang TikTok hoặc Google UAC</span>
+            <span class="aq-outcome" id="ov-aq3">—</span>
           </div>
           <div class="aq-item">
-            <span class="aq-action">Reduce creative volume từ 20/tuần xuống 8-10/tuần, tập trung vào quality testing</span>
-            <span class="aq-outcome">→ high refresh rate không correlate với download growth — broad testing không ra winner</span>
+            <span class="aq-action">Optimize creative volume vs quality ratio</span>
+            <span class="aq-outcome" id="ov-aq4">—</span>
           </div>
         </div>
         <div class="aq-tier">
           <div class="aq-tier-label green"><span class="status-dot ok"></span> Monitor</div>
           <div class="aq-item">
-            <span class="aq-action">Theo dõi weekly downloads — nếu tháng 3 kết thúc dưới 80K cần review toàn bộ UA Q2</span>
-            <span class="aq-outcome">→ current pace: 63K in 23 days = ~83K projected, threshold là 80K</span>
+            <span class="aq-action">Theo dõi weekly downloads trend</span>
+            <span class="aq-outcome" id="ov-aq5">—</span>
           </div>
           <div class="aq-item">
-            <span class="aq-action">Theo dõi Organic Search (43% downloads) — đang khỏe hơn Paid, có thể leverage ASO</span>
-            <span class="aq-outcome">→ Organic Search giảm chậm hơn Paid Display, leverage keyword optimization trước</span>
+            <span class="aq-action">Theo dõi Organic vs Paid ratio</span>
+            <span class="aq-outcome" id="ov-aq6">—</span>
           </div>
+        </div>
         </div>
       </div>
     </div>
