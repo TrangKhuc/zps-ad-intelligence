@@ -8,21 +8,21 @@
     </div>
     <div class="upload-grid">
       <div class="upload-slot" id="slot-cg" onclick="document.getElementById('file-cg').click()">
-        <input type="file" id="file-cg" accept=".csv" onchange="handleFile(this,'cg')">
+        <input type="file" id="file-cg" accept=".csv" onchange="handleFile(this,'cg')" onclick="event.stopPropagation()">
         <div class="upload-slot-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2"/><circle cx="8" cy="8" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></div>
         <div class="upload-slot-label">Creative Gallery</div>
         <div class="upload-slot-hint">Unified Creative Gallery · Detailed.csv</div>
         <div class="upload-slot-status" id="status-cg"></div>
       </div>
       <div class="upload-slot" id="slot-dch" onclick="document.getElementById('file-dch').click()">
-        <input type="file" id="file-dch" accept=".csv" onchange="handleFile(this,'dch')">
+        <input type="file" id="file-dch" accept=".csv" onchange="handleFile(this,'dch')" onclick="event.stopPropagation()">
         <div class="upload-slot-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
         <div class="upload-slot-label">Download Channel</div>
         <div class="upload-slot-hint">Download Channel by Absolute Downloads.csv</div>
         <div class="upload-slot-status" id="status-dch"></div>
       </div>
       <div class="upload-slot" id="slot-dl" onclick="document.getElementById('file-dl').click()">
-        <input type="file" id="file-dl" accept=".csv" onchange="handleFile(this,'dl')">
+        <input type="file" id="file-dl" accept=".csv" onchange="handleFile(this,'dl')" onclick="event.stopPropagation()">
         <div class="upload-slot-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
         <div class="upload-slot-label">Downloads Detailed</div>
         <div class="upload-slot-hint">Unified Downloads · Detailed.csv</div>

@@ -6,6 +6,24 @@ function set(id, val, cls) {
   if (cls) el.className = 'kpi-val ' + cls;
 }
 
+// ── SMART NUMBER FORMATTER ──
+function fmtNum(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return (n/1e9).toFixed(1) + 'B';
+  if (abs >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if (abs >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return n.toLocaleString('en-US');
+}
+function fmtMoney(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return '$' + (n/1e9).toFixed(1) + 'B';
+  if (abs >= 1e6) return '$' + (n/1e6).toFixed(1) + 'M';
+  if (abs >= 1e3) return '$' + (n/1e3).toFixed(1) + 'K';
+  return '$' + n.toLocaleString('en-US');
+}
+
 function setNavActive(el) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   el.classList.add('active');
@@ -249,18 +267,18 @@ function updateAllUI(d) {
   }
 
   // ── INTEL RAIL ──
-  s('v-chi', d.chi, 'kpi-val ' + (d.chi >= 70 ? 'up' : d.chi >= 50 ? 'warn' : 'down'));
+  s('v-chi', Math.round(d.chi||0), 'kpi-val ' + (d.chi >= 70 ? 'up' : d.chi >= 50 ? 'warn' : 'down'));
   s('s-chi', d.chiSub || ('Active rate ' + Math.round(d.activeRate||0) + '%'));
-  s('v-crei', d.crei, 'kpi-val ' + (d.crei >= 70 ? 'up' : d.crei >= 50 ? 'warn' : 'down'));
+  s('v-crei', Math.round(d.crei||0), 'kpi-val ' + (d.crei >= 70 ? 'up' : d.crei >= 50 ? 'warn' : 'down'));
   s('s-crei', d.creiSub || ('WoW ' + (d.wow>=0?'+':'') + Math.round(d.wow||0) + '%'));
-  s('v-imp', d.dlTotalFmt || (d.dlTotal ? (d.dlTotal/1000).toFixed(1)+'K' : '—'));
-  s('s-imp', d.period || 'Jan–Mar 2026');
+  s('v-imp', d.dlTotalFmt || fmtNum(d.dlTotal));
+  s('s-imp', d.period || '—');
   s('v-dl', d.dlTrend || '—', 'kpi-val ' + (d.dlTrendDir || 'neutral'));
   s('s-dl', d.dlTrendSub || '');
-  s('v-rev', d.revFmt || (d.revTotal ? '$'+(d.revTotal/1000).toFixed(0)+'K' : '—'));
+  s('v-rev', d.revFmt || fmtMoney(d.revTotal));
   s('s-rev', d.revSub || '');
-  s('v-rank', d.totalCreatives || '—');
-  s('s-rank', (d.activeNow||0) + ' active now · ' + (d.networkNames || 'Meta only'));
+  s('v-rank', d.totalCreatives ? d.totalCreatives.toLocaleString('en-US') : '—');
+  s('s-rank', (d.activeNow||0).toLocaleString('en-US') + ' active · ' + (d.networkNames || 'Meta only'));
   s('v-sent', d.networkCount || '—', 'kpi-val ' + (d.networkCount > 1 ? 'neutral' : 'warn'));
   s('s-sent', d.networkNames || 'Meta only');
 
@@ -270,12 +288,12 @@ function updateAllUI(d) {
   if (d.signalDetail) s('ov-signal-detail', d.signalDetail + ' <span class="signal-link" onclick="switchTab(\'f1\', document.querySelectorAll(\'.tab-btn\')[1])">Xem creative breakdown →</span>');
 
   // KPI mini cards
-  s('ov-total-dl', d.dlTotalFmt || (d.dlTotal ? (d.dlTotal/1000).toFixed(1)+'K' : '—'));
+  s('ov-total-dl', d.dlTotalFmt || fmtNum(d.dlTotal));
   s('ov-dl-sub', d.dlPaceSub || '');
-  s('ov-total-rev', d.revFmt || (d.revTotal ? '$'+(d.revTotal/1000).toFixed(0)+'K' : '—'));
+  s('ov-total-rev', d.revFmt || fmtMoney(d.revTotal));
   s('ov-rev-sub', d.revBreakdown || '');
   const activeCreEl = document.getElementById('ov-active-creatives');
-  if (activeCreEl) activeCreEl.innerHTML = (d.activeNow||0) + '<span style="font-size:13px;color:var(--t2);font-weight:400;">/' + (d.totalCreatives||0) + '</span>';
+  if (activeCreEl) activeCreEl.innerHTML = (d.activeNow||0).toLocaleString('en-US') + '<span style="font-size:13px;color:var(--t2);font-weight:400;"> / ' + (d.totalCreatives||0).toLocaleString('en-US') + '</span>';
   s('ov-active-sub', Math.round((d.activeNow||0)/(d.totalCreatives||1)*100) + '% active rate · ' + (d.stages?.Decay||0) + ' in decay');
   s('ov-avg-wk', (d.avgWk||0).toFixed(1));
   const avgWkMult = d.avgWk ? (d.avgWk/3).toFixed(1) : '—';
@@ -298,7 +316,7 @@ function updateAllUI(d) {
         <div class="cb-row">
           <div class="cb-label">${c.code}</div>
           <div class="cb-track"><div class="cb-fill" style="width:${(c.dl/maxDl*100).toFixed(1)}%;background:${i===0?'var(--accent)':i===1?'var(--blue)':'var(--t3)'};"></div></div>
-          <div class="cb-val">${c.dl.toLocaleString()}</div>
+          <div class="cb-val">${c.dl.toLocaleString('en-US')}</div>
         </div>`).join('');
     }
   }
@@ -311,8 +329,8 @@ function updateAllUI(d) {
     const mxDl = d.countryDl?.['MX'] || d.countryDl?.['Mexico'] || 1;
     const usRPD = usDl > 0 ? usRev / usDl : 0;
     const mxRPD = mxDl > 0 ? mxRev / mxDl : 0;
-    s('ov-us-rev', '$' + (usRev/1000).toFixed(1) + 'K');
-    s('ov-mx-rev', '$' + (mxRev/1000).toFixed(1) + 'K');
+    s('ov-us-rev', fmtMoney(usRev));
+    s('ov-mx-rev', fmtMoney(mxRev));
     s('ov-us-rpd', '$' + usRPD.toFixed(2));
     s('ov-mx-rpd', '$' + mxRPD.toFixed(2));
     const gap = mxRPD > 0 ? Math.round(usRPD / mxRPD) : '—';
@@ -341,6 +359,24 @@ function updateAllUI(d) {
 
   // F1 grid count
   s('f1-grid-count', (d.activeNow||0) + ' active · sorted by duration');
+
+  // Analyst notes — computed from data
+  if (d.totalCreatives) {
+    const decayPct = Math.round((d.stages?.Decay||0)/(d.totalCreatives||1)*100);
+    const vidPct = d.totalCreatives ? Math.round((d.totalCreatives - (d.imageCount||0)) / d.totalCreatives * 100) : 0;
+    s('f1-analyst-note', '<strong>CHI ' + Math.round(d.chi||0) + '</strong> · Active rate ' + Math.round(d.activeRate||0) + '% · ' +
+      (d.stages?.Decay||0) + '/' + d.totalCreatives + ' creatives (' + decayPct + '%) in Decay stage. ' +
+      'Video chiếm ' + vidPct + '%, image ' + (100-vidPct) + '%. ' +
+      'Refresh cadence ' + (d.avgWk||0).toFixed(1) + ' creatives/tuần (' + (d.avgWk ? (d.avgWk/3).toFixed(1) : '—') + '× casual median). ' +
+      (decayPct > 40 ? 'Decay rate cao — cần audit creatives cũ.' : decayPct > 25 ? 'Decay rate moderate — monitor closely.' : 'Healthy creative lifecycle.'));
+  }
+  if (d.topChannel) {
+    s('f2-analyst-note', '<strong>Channel mix analysis:</strong> ' + d.topChannel.name + ' (' + d.topChannel.pct + '%) là kênh lớn nhất. ' +
+      (d.networkCount > 1 ? d.networkCount + ' channels active — diversified.' : 'Single-channel (Meta only) — concentration risk.') + ' ' +
+      'Downloads ' + (d.dlTrend||'—') + '. ' +
+      (d.dlTrendDir === 'down' ? 'Tất cả channels đều giảm — vấn đề có thể ở creative fatigue hoặc audience saturation.' :
+       d.dlTrendDir === 'up' ? 'Positive momentum across channels.' : ''));
+  }
 
   // ── TAB F1: CREATIVE PROFILE ──
   // CHI + CREI big scores
@@ -447,9 +483,9 @@ function updateAllUI(d) {
           return `<div class="hm-label">${ch.name}</div>` +
             ch.values.map(v => {
               const opacity = maxVal > 0 ? (v / maxVal * 0.3 + 0.1).toFixed(2) : '0.1';
-              return `<div class="hm-cell" style="background:${c.bg}${opacity});color:${c.color};">${(v/1000).toFixed(1)}K</div>`;
+              return `<div class="hm-cell" style="background:${c.bg}${opacity});color:${c.color};">${fmtNum(v)}</div>`;
             }).join('') +
-            `<div class="hm-delta" style="color:var(--t1);font-size:10px;">${(ch.total/1000).toFixed(0)}K</div>`;
+            `<div class="hm-delta" style="color:var(--t1);font-size:10px;">${fmtNum(ch.total)}</div>`;
         }).join('')}`;
     }
   }
@@ -467,10 +503,16 @@ function updateAllUI(d) {
 
   // ── SYNC LABEL + BADGE ──
   if (d.appName) {
-    s('sync-label', 'Real data · ' + d.appName);
+    s('sync-label', (d._isUploaded ? 'Real data · ' : '') + d.appName);
     s('active-comp-name', d.appName);
     const badge = document.getElementById('data-badge');
-    if (badge) { badge.textContent = 'Uploaded'; badge.classList.remove('demo'); }
+    if (badge) {
+      if (d._isUploaded) { badge.textContent = 'Uploaded'; badge.classList.remove('demo'); }
+    }
+    // Dim other competitor chips when uploaded data is active
+    if (d._isUploaded) {
+      document.querySelectorAll('.comp-chip').forEach(c => c.classList.remove('active'));
+    }
   }
 }
 
@@ -622,15 +664,20 @@ async function analyzeUploads() {
     const typeCombos = new Set(uc.map(r=>r['Type']+'_'+(r['Dimensions']||'unk'))).size;
     const hookDiv = Math.min(typeCombos/5,1)*100;
 
-    // Weekly creative count
+    // Weekly creative count — group by Monday-start weeks
     const wkCounts = {};
     uc.forEach(r => {
       if (!r['First Seen']) return;
-      const d = new Date(r['First Seen']);
-      const wk = d.toISOString().slice(0,10);
+      const d2 = new Date(r['First Seen']);
+      // Get Monday of this week
+      const day = d2.getDay();
+      const mon = new Date(d2);
+      mon.setDate(d2.getDate() - ((day + 6) % 7));
+      const wk = mon.toISOString().slice(0,10);
       wkCounts[wk] = (wkCounts[wk]||0)+1;
     });
-    const avgWk = Object.values(wkCounts).reduce((a,b)=>a+b,0)/Math.max(Object.keys(wkCounts).length,1);
+    const numWeeks = Math.max(Object.keys(wkCounts).length, 1);
+    const avgWk = Object.values(wkCounts).reduce((a,b)=>a+b,0)/numWeeks;
     const refreshScore = Math.min(avgWk/3,1)*100;
     const chi = Math.round((activeRate*0.30 + hookDiv*0.25 + outperform*0.25 + refreshScore*0.20)*10)/10;
 
@@ -657,7 +704,16 @@ async function analyzeUploads() {
 
     // ── COMPUTE WEEKLY DATA for charts/timeline ──
     const wkArr = Object.entries(wkCounts).sort((a,b) => a[0].localeCompare(b[0]));
-    const weekLabels = wkArr.map(([d]) => { const dt = new Date(d); return 'W' + Math.ceil(dt.getDate()/7) + ' ' + dt.toLocaleString('en',{month:'short'}); });
+    const weekLabels = wkArr.map(([d3]) => {
+      const mon = new Date(d3);
+      const sun = new Date(mon);
+      sun.setDate(mon.getDate() + 6);
+      const mStr = mon.toLocaleString('en',{month:'short'});
+      const sStr = sun.toLocaleString('en',{month:'short'});
+      return mStr === sStr
+        ? mStr + ' ' + mon.getDate() + '–' + sun.getDate()
+        : mStr + ' ' + mon.getDate() + '–' + sStr + ' ' + sun.getDate();
+    });
     const weeklyCreatives = wkArr.map(([,v]) => v);
 
     // Weekly downloads from dch
@@ -719,12 +775,15 @@ async function analyzeUploads() {
     // Weekly timeline for F2
     const weeklyTimeline = wkArr.slice(-7).reverse().map(([d2,count], i) => {
       const maxWk = Math.max(...weeklyCreatives);
+      const mon = new Date(d2);
+      const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+      const label = mon.toLocaleDateString('en',{month:'short',day:'numeric'}) + '–' + sun.toLocaleDateString('en',{month:'short',day:'numeric'});
       return {
-        label: new Date(d2).toLocaleDateString('en',{month:'short',day:'numeric'}),
+        label,
         count,
         isHighest: count === maxWk && i > 0,
         isPeak: count > (avgWk * 1.2) && count !== maxWk,
-        note: i === 0 ? 'Most recent complete week' : ''
+        note: i === 0 ? 'Most recent week' : ''
       };
     });
 
@@ -741,7 +800,7 @@ async function analyzeUploads() {
       const pctChange = Math.round((curr-prev)/prev*100);
       dlTrend = (pctChange >= 0 ? '↑ ' : '↓ ') + Math.abs(pctChange) + '%';
       dlTrendDir = pctChange >= 0 ? 'up' : 'down';
-      dlTrendSub = monthDlArr.map(([m,v]) => m + ' ' + (v/1000).toFixed(0) + 'K').join(' → ');
+      dlTrendSub = monthDlArr.map(([m,v]) => m + ' ' + fmtNum(v)).join(' → ');
     }
 
     // Generate insight pills from computed data
@@ -775,12 +834,18 @@ async function analyzeUploads() {
       chiDelta: 0, creiDelta: 0, // no delta on first upload
       dlTotal, revTotal, totalCreatives: totalC, activeNow,
       stages, vbuckets, imageCount,
-      dlTotalFmt: (dlTotal/1000).toFixed(1) + 'K',
-      revFmt: '$' + (revTotal/1000).toFixed(0) + 'K',
+      dlTotalFmt: fmtNum(dlTotal),
+      revFmt: fmtMoney(revTotal),
       dlTrend, dlTrendDir, dlTrendSub,
       period: firstSeens[0]?.slice(0,10) + ' – ' + dataEnd?.slice(0,10),
-      revSub: 'US: ' + Math.round((countryRevMap['US']||0)/revTotal*100) + '% · MX: ' + Math.round((countryRevMap['MX']||0)/revTotal*100) + '%',
-      revBreakdown: 'US $' + ((countryRevMap['US']||0)/1000).toFixed(1) + 'K · MX $' + ((countryRevMap['MX']||0)/1000).toFixed(1) + 'K',
+      revSub: (function() {
+        const topRev = Object.entries(countryRevMap).sort((a,b) => b[1]-a[1]).slice(0,2);
+        return topRev.map(([c,v]) => c + ': ' + Math.round(v/(revTotal||1)*100) + '%').join(' · ');
+      })(),
+      revBreakdown: (function() {
+        const topRev = Object.entries(countryRevMap).sort((a,b) => b[1]-a[1]).slice(0,2);
+        return topRev.map(([c,v]) => c + ' ' + fmtMoney(v)).join(' · ');
+      })(),
       networkCount: new Set(cols).size > 1 ? cols.length : 1,
       networkNames: cols.length > 1 ? cols.slice(0,3).join(', ') : 'Meta only',
       appName,
@@ -797,6 +862,7 @@ async function analyzeUploads() {
       pills: computedPills,
       signalHeadline: 'Downloads ' + dlTrend + ' dù creative volume cao: ' + Math.round(avgWk) + ' creatives/tuần',
       signalDetail: 'CREI ' + crei + ' · CHI ' + chi + ' · ' + (wow >= 0 ? 'positive' : 'negative') + ' WoW momentum (' + Math.round(wow) + '%). ' + (stages.Decay > totalC * 0.3 ? stages.Decay + ' creatives in decay (' + Math.round(stages.Decay/totalC*100) + '%) — cần audit.' : ''),
+      _isUploaded: true,
     });
 
     // Also store the creatives for auto-label

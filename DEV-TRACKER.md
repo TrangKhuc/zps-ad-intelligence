@@ -130,3 +130,11 @@
 | | | - Added `initDefaultData()` IIFE at end of main.js — calls `initCharts()`, `initF2Chart()`, `updateAllUI(Conquian)` on load |
 | | | - Added 12 more element updates to `updateAllUI()`: ov-date-range, ov-country-signal, ov-sc1-meta, ov-sc3-meta, ov-aq1–aq6, f1-grid-count |
 | | | - JS is now **single source of truth** — HTML contains zero data values |
+| 2026-03-27 | 1.3 | **5 bug fixes from PUBG testing** |
+| | | - **#1 Number formatting:** Added `fmtNum()`/`fmtMoney()` — smart K/M/B suffixes, `toLocaleString` for readability |
+| | | - **#2 Text sections:** Analyst notes (f1, f2) now auto-generated from data. Signal texts computed per app |
+| | | - **#3 Demo confusion:** After CSV upload, competitor chips deselected, badge shows "Uploaded", app name updated |
+| | | - **#4 Timeline dates:** Changed from "W1 Jan" to "Jan 5–11" date ranges. Proper Monday-start week grouping |
+| | | - **#5 Double-upload:** Fixed `event.stopPropagation()` on file inputs — no more double file picker |
+| | | - Revenue/country breakdown now uses top 2 countries dynamically (not hardcoded US/MX) |
+| | | - Heatmap cells use `fmtNum()` for consistent formatting |
