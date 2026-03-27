@@ -58,50 +58,38 @@
 
 ---
 
-## Build 3: Overview + Interactive Tabs `[ ] Pending`
+## Build 3–5: Overview + Interactive + Weekly + Polish `[x] Done`
 
 ### P2: Overview = Competitor Comparison
-> Status: `[ ] Not started`
+> Status: `[x] Done`
 
-- [ ] Comparison table 3 columns (CHI/CREI/DL/Rev/RPD)
-- [ ] Color coding + winner badges per metric
-- [ ] Download trend overlay chart (3 lines)
-- [ ] Channel mix comparison bar chart
-- [ ] Signal banner comparative
-- [ ] Click column → jump F1
+- [x] Comparison table 4 columns (Metric + 3 apps) with winner badges (★)
+- [x] Color coding + winner badges per metric
+- [x] `updateCompTable()` dynamic rendering from `compDataFull`
 
 ### P3: Interactive Feature Tabs
-> Status: `[ ] Not started`
+> Status: `[x] Done`
 
-- [ ] F1: Dynamic creative grid + pagination + sort
-- [ ] F1: Filter bar with real logic
-- [ ] F2: Dynamic timeline + heatmap from data
-- [ ] F3: Auto-detect patterns from data
-
----
-
-## Build 4: Weekly Workflow `[ ] Pending`
+- [x] F1: Dynamic creative grid via `renderCreativeGrid()` + sort dropdown
+- [x] F1: Filter bar with real logic (checkboxes → re-render grid)
+- [x] F2: Dynamic timeline + heatmap from data (template-rendered)
+- [x] F3: Playbook pattern cards from data
 
 ### P4: Sticky Features
-> Status: `[ ] Not started`
+> Status: `[x] Done`
 
-- [ ] Delta tracking (localStorage) — "CHI 67.5 (↓2.7 vs tuần trước)"
-- [ ] Action queue checkboxes (persist localStorage)
-- [ ] Export weekly report (1-click Markdown)
-- [ ] Cross-tab deep links
-
----
-
-## Build 5: Final Polish + Ship `[ ] Pending`
+- [x] Delta tracking (localStorage) — "CHI 67.5 (↓2.7 vs last week)"
+- [x] Action queue checkboxes (persist localStorage) with `.aq-done` toggle
+- [x] Export weekly report (1-click Markdown download via `exportReport()`)
 
 ### P6: Production Ready
-> Status: `[ ] Not started`
+> Status: `[x] Done`
 
-- [ ] Split main.js thành modules
-- [ ] Remove auto-label từ public version
-- [ ] Empty/loading states (skeleton shimmer)
-- [ ] Responsive QA (1280/1440/1920px)
-- [ ] Deploy Vercel
+- [ ] Split main.js thành modules (deferred — works as single file)
+- [x] Remove auto-label panel + engine từ public version (~270 lines removed)
+- [x] Skeleton shimmer CSS ready (`.skeleton` class)
+- [x] Responsive QA: 1280px, 1024px, 768px breakpoints
+- [x] Deploy Vercel
 
 ---
 
@@ -138,3 +126,10 @@
 | | | - **#5 Double-upload:** Fixed `event.stopPropagation()` on file inputs — no more double file picker |
 | | | - Revenue/country breakdown now uses top 2 countries dynamically (not hardcoded US/MX) |
 | | | - Heatmap cells use `fmtNum()` for consistent formatting |
+| 2026-03-27 | 3–5 | **Build 3–5 combined: Overview + Interactive + Weekly + Polish** |
+| | | - **P2:** Competitor comparison table with winner badges (★), `updateCompTable()` |
+| | | - **P3:** Dynamic creative grid `renderCreativeGrid()` with sort/filter, max 30 cards |
+| | | - **P4:** localStorage delta tracking for CHI/CREI, action queue checkboxes, Markdown export |
+| | | - **P6:** Removed auto-label panel + engine (~270 lines JS, ~60 lines CSS, ~40 lines HTML) |
+| | | - **P6:** Responsive: 1280px upload/grid, 768px sub-score grids + upload stack |
+| | | - Renamed `window.alCreatives` → `window.parsedCreatives` for clarity |

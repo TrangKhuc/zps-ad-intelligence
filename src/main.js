@@ -509,11 +509,217 @@ function updateAllUI(d) {
     if (badge) {
       if (d._isUploaded) { badge.textContent = 'Uploaded'; badge.classList.remove('demo'); }
     }
-    // Dim other competitor chips when uploaded data is active
     if (d._isUploaded) {
       document.querySelectorAll('.comp-chip').forEach(c => c.classList.remove('active'));
     }
   }
+
+  // ── COMPARISON TABLE ──
+  updateCompTable(d);
+
+  // ── DYNAMIC CREATIVE GRID ──
+  if (d._creatives) renderCreativeGrid(d._creatives);
+
+  // ── DELTA TRACKING (localStorage) ──
+  if (d.appName && d.chi && d.crei) {
+    const key = 'ad-intel-delta-' + d.appName.replace(/\s+/g,'-');
+    const prev = JSON.parse(localStorage.getItem(key) || 'null');
+    if (prev) {
+      const chiD = d.chi - prev.chi;
+      const creiD = d.crei - prev.crei;
+      if (chiD !== 0) s('s-chi', 'Active rate ' + Math.round(d.activeRate||0) + '% · vs last: ' + (chiD>=0?'+':'') + chiD.toFixed(1));
+      if (creiD !== 0) s('s-crei', 'WoW ' + (d.wow>=0?'+':'') + Math.round(d.wow||0) + '% · vs last: ' + (creiD>=0?'+':'') + creiD.toFixed(1));
+    }
+    localStorage.setItem(key, JSON.stringify({ chi: d.chi, crei: d.crei, ts: Date.now() }));
+  }
+}
+
+// ── COMPARISON TABLE UPDATER ──
+function updateCompTable(activeData) {
+  const tbody = document.getElementById('cmp-tbody');
+  if (!tbody || !activeData) return;
+
+  // Get all 3 app data objects
+  const apps = Object.keys(compDataFull);
+  const activeApp = activeData.appName || apps[0];
+
+  // Build ordered list: active first, then others
+  const appList = [];
+  const activeIdx = apps.indexOf(activeApp);
+  if (activeIdx >= 0) {
+    appList.push({ name: activeApp, d: compDataFull[activeApp] });
+    apps.forEach((a, i) => { if (i !== activeIdx) appList.push({ name: a, d: compDataFull[a] }); });
+  } else {
+    // Uploaded app not in watchlist — use uploaded data as app1
+    appList.push({ name: activeApp, d: activeData });
+    apps.forEach(a => appList.push({ name: a, d: compDataFull[a] }));
+  }
+
+  // Only show 3 apps max
+  const a = appList.slice(0, 3);
+
+  // Set headers
+  for (let i = 0; i < 3; i++) {
+    const nameEl = document.getElementById('cmp-name-app' + (i+1));
+    if (nameEl) nameEl.textContent = a[i]?.name || '—';
+  }
+
+  // Define metrics
+  const metrics = [
+    { key: 'chi', fmt: v => Math.round(v||0), higher: true },
+    { key: 'crei', fmt: v => Math.round(v||0), higher: true },
+    { key: 'dl', fmt: v => fmtNum(v), valKey: 'dlTotal', higher: true },
+    { key: 'rev', fmt: v => fmtMoney(v), valKey: 'revTotal', higher: true },
+    { key: 'creatives', fmt: v => (v||0).toLocaleString('en-US'), valKey: 'activeNow', higher: true },
+    { key: 'networks', fmt: v => v||0, valKey: 'networkCount', higher: true },
+    { key: 'avgwk', fmt: v => (v||0).toFixed(1), valKey: 'avgWk', higher: true },
+    { key: 'trend', fmt: v => v||'—', valKey: 'dlTrend', higher: false },
+  ];
+
+  metrics.forEach(m => {
+    const vals = a.map(app => {
+      const d = app?.d || {};
+      return m.valKey ? d[m.valKey] : d[m.key];
+    });
+    const numVals = vals.map(v => typeof v === 'number' ? v : parseFloat(String(v)) || 0);
+    const maxVal = m.higher ? Math.max(...numVals) : null;
+
+    for (let i = 0; i < 3; i++) {
+      const el = document.getElementById('cmp-' + m.key + '-app' + (i+1));
+      if (!el) continue;
+      const formatted = m.fmt(vals[i]);
+      const isWinner = m.higher && numVals[i] === maxVal && numVals.filter(v => v === maxVal).length === 1;
+      el.innerHTML = formatted + (isWinner ? ' <span class="cmp-winner-badge">★</span>' : '');
+    }
+  });
+}
+
+// ── DYNAMIC CREATIVE GRID ──
+function renderCreativeGrid(creatives) {
+  const grid = document.querySelector('.creative-grid');
+  if (!grid || !creatives || !creatives.length) return;
+
+  // Get current filter/sort state
+  const sortSel = document.querySelector('.sort-sel');
+  const sortBy = sortSel ? sortSel.value : 'Duration (longest)';
+
+  // Sort
+  let sorted = [...creatives];
+  if (sortBy === 'Duration (longest)') sorted.sort((a,b) => b.dur - a.dur);
+  else if (sortBy === 'Duration (newest)') sorted.sort((a,b) => a.dur - b.dur);
+  else if (sortBy === 'First Seen') sorted.sort((a,b) => (b.firstSeen||'').localeCompare(a.firstSeen||''));
+  else if (sortBy === 'Type') sorted.sort((a,b) => (a.type||'').localeCompare(b.type||''));
+
+  // Apply filters
+  const filterDrops = document.querySelectorAll('.fdrop-wrap');
+  filterDrops.forEach(wrap => {
+    const checked = [...wrap.querySelectorAll('input:checked')].map(i => i.value);
+    if (!checked.length || checked.length === wrap.querySelectorAll('input').length) return;
+    const label = wrap.querySelector('.fdrop')?.textContent?.trim() || '';
+    if (label.includes('Type')) {
+      sorted = sorted.filter(c => checked.includes(c.type));
+    } else if (label.includes('Stage')) {
+      sorted = sorted.filter(c => checked.includes(c.stage));
+    }
+  });
+
+  // Render max 30 items
+  const items = sorted.slice(0, 30);
+  const stageColors = { Launch: 'launch', Testing: 'testing', Scaling: 'scaling', Decay: 'decay' };
+  const gradients = [
+    'linear-gradient(135deg,#f0effe,#e4e2f8)',
+    'linear-gradient(135deg,#e8f5e9,#c8e6c9)',
+    'linear-gradient(135deg,#fff3e0,#ffe0b2)',
+    'linear-gradient(135deg,#e3f2fd,#bbdefb)',
+  ];
+
+  grid.innerHTML = items.map((c, i) => `
+    <div class="cc">
+      <div class="cc-thumb" style="background:${gradients[i%4]};">
+        <svg class="cc-thumb-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        ${c.vidDur ? '<span class="cc-dur">' + (c.vidDur < 60 ? '00:' + Math.round(c.vidDur).toString().padStart(2,'0') : Math.floor(c.vidDur/60) + ':' + Math.round(c.vidDur%60).toString().padStart(2,'0')) + '</span>' : ''}
+        <span class="cc-type ${c.type}">${c.type}</span>
+        <span class="cc-stage ${stageColors[c.stage]||'decay'}">${c.stage}</span>
+      </div>
+      <div class="cc-meta">
+        <div class="cc-title">${c.id.slice(0,16)}</div>
+        <div class="cc-desc">${c.networks || 'Facebook · Instagram'}</div>
+        <div class="cc-metrics">
+          <div class="ccm"><div class="ccm-label">Life Cycle</div><div class="ccm-val" style="color:${c.dur > 60 ? 'var(--coral)' : c.dur > 21 ? 'var(--amber)' : 'var(--green)'};">${c.dur}d</div></div>
+          ${c.vidDur ? '<div class="ccm"><div class="ccm-label">Video dur.</div><div class="ccm-val">' + c.vidDur.toFixed(1) + 's</div></div>' : ''}
+        </div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;" id="cc-tags-${c.id}">
+          ${window.alLabels?.[c.id] ? '<span class="ctag ctag-hook">' + window.alLabels[c.id].hook + '</span>' : ''}
+        </div>
+      </div>
+    </div>`).join('');
+
+  // Update count
+  const countEl = document.getElementById('f1-grid-count');
+  if (countEl) countEl.textContent = items.length + '/' + creatives.length + ' shown · sorted by ' + sortBy.toLowerCase();
+}
+
+// ── ACTION QUEUE CHECKBOXES ──
+document.addEventListener('click', e => {
+  const aq = e.target.closest('.aq-item');
+  if (!aq) return;
+  aq.classList.toggle('aq-done');
+  // Persist
+  const allItems = [...document.querySelectorAll('.aq-item')];
+  const doneState = allItems.map(item => item.classList.contains('aq-done'));
+  localStorage.setItem('ad-intel-aq-state', JSON.stringify(doneState));
+});
+// Restore on load
+function restoreAqState() {
+  const saved = JSON.parse(localStorage.getItem('ad-intel-aq-state') || '[]');
+  const allItems = [...document.querySelectorAll('.aq-item')];
+  saved.forEach((done, i) => { if (done && allItems[i]) allItems[i].classList.add('aq-done'); });
+}
+
+// ── EXPORT WEEKLY REPORT ──
+function exportReport() {
+  const appName = document.getElementById('active-comp-name')?.textContent || 'Unknown';
+  const chi = document.getElementById('v-chi')?.textContent || '—';
+  const crei = document.getElementById('v-crei')?.textContent || '—';
+  const dl = document.getElementById('v-imp')?.textContent || '—';
+  const rev = document.getElementById('v-rev')?.textContent || '—';
+  const trend = document.getElementById('v-dl')?.textContent || '—';
+  const signal = document.getElementById('ov-signal-headline')?.textContent || '—';
+
+  const md = `# Weekly Ad Intelligence Report
+**App:** ${appName}
+**Date:** ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}
+
+## Key Metrics
+| Metric | Value |
+|--------|-------|
+| CHI | ${chi} |
+| CREI | ${crei} |
+| Total Downloads | ${dl} |
+| Revenue | ${rev} |
+| DL Trend | ${trend} |
+
+## Signal
+${signal}
+
+## Action Items
+${[...document.querySelectorAll('.aq-item')].map(item => {
+  const done = item.classList.contains('aq-done') ? 'x' : ' ';
+  const action = item.querySelector('.aq-action')?.textContent || '';
+  return '- [' + done + '] ' + action;
+}).join('\n')}
+
+---
+*Generated by ZPS Ad Intelligence Tool*
+`;
+
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = appName.replace(/\s+/g, '-') + '-report-' + new Date().toISOString().slice(0,10) + '.md';
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ── UPLOAD PANEL TOGGLE ──
@@ -863,10 +1069,19 @@ async function analyzeUploads() {
       signalHeadline: 'Downloads ' + dlTrend + ' dù creative volume cao: ' + Math.round(avgWk) + ' creatives/tuần',
       signalDetail: 'CREI ' + crei + ' · CHI ' + chi + ' · ' + (wow >= 0 ? 'positive' : 'negative') + ' WoW momentum (' + Math.round(wow) + '%). ' + (stages.Decay > totalC * 0.3 ? stages.Decay + ' creatives in decay (' + Math.round(stages.Decay/totalC*100) + '%) — cần audit.' : ''),
       _isUploaded: true,
+      _creatives: uc.map(r => ({
+        id: (r['Creative URL']||'').split('/').pop() || r['Creative URL'] || Math.random().toString(36).slice(2),
+        url: r['Creative URL'] || '',
+        type: r['Type'] || 'video',
+        dur: parseInt(r['Duration'])||0,
+        stage: (parseInt(r['Duration'])||0) < 7 ? 'Launch' : (parseInt(r['Duration'])||0) < 21 ? 'Testing' : (parseInt(r['Duration'])||0) < 60 ? 'Scaling' : 'Decay',
+        vidDur: parseFloat(r['Video Duration']) || null,
+        firstSeen: r['First Seen'] || '',
+      })),
     });
 
-    // Also store the creatives for auto-label
-    window.alCreatives = uc.map(r => ({
+    // Store parsed creatives for grid rendering
+    window.parsedCreatives = uc.map(r => ({
       id: (r['Creative URL']||'').split('/').pop() || r['Creative URL'] || Math.random().toString(36).slice(2),
       url: r['Creative URL'] || '',
       type: r['Type'] || 'video',
@@ -990,279 +1205,6 @@ function initF2Chart() {
       }
     }
   });
-}
-
-// ══════════════════════════════════════════════════════
-// AUTO-LABEL ENGINE — Claude API built-in (no key needed)
-// ══════════════════════════════════════════════════════
-
-const AL_HOOK_OPTIONS    = ["Social proof","Gameplay demo","Win/Reward reveal","FOMO/Urgency","Challenge/Puzzle","Tutorial/How-to","Nostalgia/Lifestyle"];
-const AL_EMOTION_OPTIONS = ["Excitement","Nostalgia","Competitiveness","Relaxation","Social connection","Curiosity","FOMO"];
-const AL_MECHANIC_OPTIONS= ["Card flip reveal","Match/Win animation","Real gameplay footage","Tutorial walkthrough","Text-heavy/Static","Voice-over demo","UGC/Fake-UGC","Short-hook ≤10s"];
-
-// Label store — survives tab switches within session
-window.alLabels = window.alLabels || {};
-window.alCreatives = window.alCreatives || null; // populated from CSV upload
-
-// Default creative list from Conquian Sensor Tower data
-const AL_DEFAULT_CREATIVES = [
-  { id:"17afbccad8164b4b", url:"https://x-ad-assets.s3.amazonaws.com/media_asset/17afbccad8164b4b/media", type:"video", dur:359, stage:"Decay",   vidDur:26.6 },
-  { id:"a462798bcef85add", url:"https://x-ad-assets.s3.amazonaws.com/media_asset/a462798bcef85add/media", type:"video", dur:359, stage:"Decay",   vidDur:27.2 },
-  { id:"c33a175638db4a0a", url:"https://x-ad-assets.s3.amazonaws.com/media_asset/c33a175638db4a0a/media", type:"video", dur:359, stage:"Decay",   vidDur:27.2 },
-  { id:"c7e4c71ff2cc46f3", url:"https://x-ad-assets.s3.amazonaws.com/media_asset/c7e4c71ff2cc46f3/media", type:"video", dur:359, stage:"Decay",   vidDur:26.4 },
-  { id:"07c14c0178cda776", url:"https://x-ad-assets.s3.amazonaws.com/media_asset/07c14c0178cda776/media", type:"video", dur:226, stage:"Decay",   vidDur:26.7 },
-  { id:"3b655d4b8e7c4e50", url:"https://x-ad-assets.s3.amazonaws.com/media_asset/3b655d4b8e7c4e50/media", type:"video", dur:226, stage:"Decay",   vidDur:26.7 },
-  { id:"01b2ddc3d6f79b5d", url:"https://x-ad-assets.s3.amazonaws.com/media_asset/01b2ddc3d6f79b5d/media", type:"video", dur:72,  stage:"Scaling", vidDur:13.1 },
-  { id:"0d2bbe23015eb64b", url:"https://x-ad-assets.s3.amazonaws.com/media_asset/0d2bbe23015eb64b/media", type:"video", dur:63,  stage:"Scaling", vidDur:25.7 },
-  { id:"0ee189c3943ba291", url:"https://x-ad-assets.s3.amazonaws.com/media_asset/0ee189c3943ba291/media", type:"video", dur:38,  stage:"Testing", vidDur:8.7  },
-  { id:"0eab42cb611a90aa", url:"https://x-ad-assets.s3.amazonaws.com/media_asset/0eab42cb611a90aa/media", type:"video", dur:7,   stage:"Launch",  vidDur:16.5 },
-  { id:"0f1c5176fd16be9c", url:"https://x-ad-assets.s3.amazonaws.com/media_asset/0f1c5176fd16be9c/media", type:"image", dur:132, stage:"Decay",   vidDur:null },
-  { id:"3baef3b5b9d1aeb7", url:"https://x-ad-assets.s3.amazonaws.com/media_asset/3baef3b5b9d1aeb7/media", type:"image", dur:139, stage:"Decay",   vidDur:null },
-  { id:"5d0aa7945686970f", url:"https://x-ad-assets.s3.amazonaws.com/media_asset/5d0aa7945686970f/media", type:"video", dur:54,  stage:"Scaling", vidDur:15.3 },
-  { id:"601e13f01dee20ed", url:"https://x-ad-assets.s3.amazonaws.com/media_asset/601e13f01dee20ed/media", type:"video", dur:52,  stage:"Scaling", vidDur:16.5 },
-  { id:"5fbfbf51926ea264", url:"https://x-ad-assets.s3.amazonaws.com/media_asset/5fbfbf51926ea264/media", type:"video", dur:33,  stage:"Testing", vidDur:24.5 },
-];
-
-function getCreativeList() {
-  return window.alCreatives || AL_DEFAULT_CREATIVES;
-}
-
-function filterByScope(creatives, scope) {
-  if (scope === 'top10')   return creatives.slice(0, 10);
-  if (scope === 'active')  return creatives.filter(c => c.dur <= 60 || c.stage !== 'Decay');
-  if (scope === 'scaling') return creatives.filter(c => ['Scaling','Testing','Launch'].includes(c.stage));
-  return creatives; // 'all'
-}
-
-// Build Claude prompt — metadata-based (works for all, no image fetch needed for video)
-function buildMetadataPrompt(creative) {
-  const durationDesc = creative.vidDur
-    ? `Video duration: ${creative.vidDur.toFixed(1)}s (${creative.vidDur <= 10 ? 'very short/hook format' : creative.vidDur <= 20 ? 'short-form' : creative.vidDur <= 30 ? 'standard' : 'long-form'})`
-    : `Image/static creative`;
-  const stageDesc = `Campaign stage: ${creative.stage} (running ${creative.dur} days)`;
-  const gameCtx = `Game: Conquian Zingplay — Mexican card game (similar to Rummy), casual/card genre, main markets MX & US`;
-
-  return `You are a mobile UA creative analyst specializing in casual card games.
-
-Analyze this ad creative based on its metadata:
-- ${gameCtx}
-- Creative type: ${creative.type}
-- ${durationDesc}
-- ${stageDesc}
-- Creative ID: ${creative.id}
-
-Based on the duration, type, and campaign stage patterns for a Mexican card game, classify this creative.
-
-Return ONLY a JSON object, no other text:
-{
-  "hook": one of ${JSON.stringify(AL_HOOK_OPTIONS)},
-  "emotion": one of ${JSON.stringify(AL_EMOTION_OPTIONS)},
-  "mechanic": one of ${JSON.stringify(AL_MECHANIC_OPTIONS)},
-  "confidence": number 0-100,
-  "reasoning": "one sentence explaining the classification"
-}
-
-Guidance:
-- 13s videos for card games are typically Win/Reward reveal or Gameplay demo
-- 25-28s videos are usually Gameplay demo or Social proof
-- Image creatives running 100+ days are likely Social proof or static brand
-- Videos <10s are typically FOMO/Urgency or short hooks
-- Decay stage (60+ days) creatives that survived = likely Social proof or Gameplay demo (proven format)`;
-}
-
-// Try CORS fetch for image, return null if fails
-async function tryFetchImage(url) {
-  try {
-    const res = await fetch(url, { mode: 'cors', cache: 'no-store' });
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    if (!blob.type.startsWith('image')) return null;
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve({ data: reader.result.split(',')[1], type: blob.type });
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
-  } catch { return null; }
-}
-
-// Label one creative via Claude API built-in
-async function labelOneCreative(creative) {
-  if (window.alLabels[creative.id]) return window.alLabels[creative.id]; // cache hit
-
-  let messages;
-
-  // For image creatives: try visual analysis first
-  if (creative.type === 'image') {
-    const imgData = await tryFetchImage(creative.url);
-    if (imgData) {
-      messages = [{
-        role: 'user',
-        content: [
-          { type: 'image', source: { type: 'base64', media_type: imgData.type, data: imgData.data } },
-          { type: 'text', text: `You are a mobile UA creative analyst for casual card games (Conquian Zingplay — Mexican card game, markets MX/US).
-
-Analyze this ad creative image. Return ONLY a JSON object:
-{
-  "hook": one of ${JSON.stringify(AL_HOOK_OPTIONS)},
-  "emotion": one of ${JSON.stringify(AL_EMOTION_OPTIONS)},
-  "mechanic": one of ${JSON.stringify(AL_MECHANIC_OPTIONS)},
-  "confidence": number 0-100,
-  "reasoning": "one sentence"
-}` }
-        ]
-      }];
-    }
-  }
-
-  // Fallback: metadata-based prompt (works for all video, and image if CORS fails)
-  if (!messages) {
-    messages = [{
-      role: 'user',
-      content: buildMetadataPrompt(creative)
-    }];
-  }
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 256,
-      messages
-    })
-  });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.error?.message || `HTTP ${response.status}`);
-  }
-
-  const data = await response.json();
-  const text = (data.content?.[0]?.text || '').trim();
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error('No JSON in response');
-
-  const result = JSON.parse(match[0]);
-  window.alLabels[creative.id] = result;
-  return result;
-}
-
-// Update creative card in F1 grid with new tags
-function applyTagsToCard(creativeId, labels) {
-  document.querySelectorAll('.cc-title').forEach(el => {
-    if (!el.textContent.includes(creativeId.slice(0, 12))) return;
-    const meta = el.closest('.cc-meta');
-    if (!meta) return;
-    meta.querySelectorAll('.al-auto-tags').forEach(t => t.remove());
-    const div = document.createElement('div');
-    div.className = 'al-auto-tags';
-    div.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;';
-    if (labels.hook)     div.innerHTML += `<span class="ctag ctag-hook">${labels.hook}</span>`;
-    if (labels.emotion)  div.innerHTML += `<span class="ctag ctag-emotion">${labels.emotion}</span>`;
-    if (labels.mechanic) div.innerHTML += `<span class="ctag ctag-mechanic">${labels.mechanic}</span>`;
-    meta.appendChild(div);
-  });
-}
-
-// Main run function
-async function runAutoLabel() {
-  const scope   = document.getElementById('al-scope').value;
-  const runBtn  = document.getElementById('al-run-btn');
-  const inner   = document.getElementById('al-btn-inner');
-  const progWrap= document.getElementById('al-progress-wrap');
-  const progText= document.getElementById('al-progress-text');
-  const progFill= document.getElementById('al-progress-fill');
-  const results = document.getElementById('al-results-wrap');
-  const countEl = document.getElementById('al-label-count');
-
-  const creatives = filterByScope(getCreativeList(), scope);
-  if (!creatives.length) { alert('Không có creative nào match scope này.'); return; }
-
-  runBtn.disabled = true;
-  inner.innerHTML = '<div class="al-spinner"></div> Analyzing…';
-  progWrap.classList.add('visible');
-  results.innerHTML = '';
-
-  let done = 0, errors = 0;
-  const total = creatives.length;
-
-  for (const c of creatives) {
-    progText.textContent = `(${done + 1}/${total}) Analyzing ${c.id.slice(0,10)}… [${c.type} · ${c.dur}d · ${c.stage}]`;
-    progFill.style.width = (done / total * 100) + '%';
-
-    try {
-      const label = await labelOneCreative(c);
-      applyTagsToCard(c.id, label);
-
-      const row = document.createElement('div');
-      row.className = 'al-row';
-      row.innerHTML = `
-        <div class="al-row-id">${c.id.slice(0,14)}<br><span style="color:var(--t3)">${c.type} · ${c.dur}d</span></div>
-        <div class="al-row-tags">
-          <span class="ctag ctag-hook">${label.hook || '—'}</span>
-          <span class="ctag ctag-emotion">${label.emotion || '—'}</span>
-          <span class="ctag ctag-mechanic">${label.mechanic || '—'}</span>
-        </div>
-        <div class="al-row-conf">${label.confidence || '—'}%</div>`;
-      results.appendChild(row);
-      results.scrollTop = results.scrollHeight;
-
-    } catch (err) {
-      errors++;
-      const row = document.createElement('div');
-      row.className = 'al-row';
-      row.innerHTML = `
-        <div class="al-row-id">${c.id.slice(0,14)}</div>
-        <div class="al-row-err">Error: ${err.message.slice(0, 55)}</div>`;
-      results.appendChild(row);
-    }
-
-    done++;
-    await new Promise(r => setTimeout(r, 250)); // rate limit buffer
-  }
-
-  progFill.style.width = '100%';
-  progText.textContent = `✓ Done — ${done - errors} labeled, ${errors} errors.`;
-
-  const labeled = Object.keys(window.alLabels).length;
-  countEl.textContent = `${labeled} creatives labeled`;
-  countEl.style.display = 'inline';
-  document.getElementById('al-export-btn').style.display = 'inline-flex';
-
-  runBtn.disabled = false;
-  inner.innerHTML = '<svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M5 3l8 5-8 5V3z" fill="currentColor"/></svg> Label more';
-}
-
-// Export all labels as CSV
-function exportLabels() {
-  const labels = window.alLabels;
-  if (!Object.keys(labels).length) { alert('Chưa có labels — chạy auto-label trước.'); return; }
-  const rows = ['creative_id,hook,emotion,mechanic,confidence,reasoning'];
-  Object.entries(labels).forEach(([id, l]) => {
-    rows.push([
-      id,
-      (l.hook||'').replace(/,/g,';'),
-      (l.emotion||'').replace(/,/g,';'),
-      (l.mechanic||'').replace(/,/g,';'),
-      l.confidence || '',
-      (l.reasoning||'').replace(/,/g,';')
-    ].join(','));
-  });
-  const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'creative-labels-' + new Date().toISOString().slice(0,10) + '.csv';
-  a.click();
-}
-
-// Show/hide panel
-function toggleAlPanel(show) {
-  const p = document.getElementById('al-panel');
-  if (p) p.style.display = show === false ? 'none' : 'block';
 }
 
 // ── SELECTCOMP update for demo vs real ──
@@ -1512,4 +1454,18 @@ function selectComp(btn, name) {
   initCharts();
   initF2Chart();
   updateAllUI(compDataFull['Conquian Zingplay']);
+  restoreAqState();
+
+  // Sort dropdown → re-render creative grid
+  const sortSel = document.querySelector('.sort-sel');
+  if (sortSel) sortSel.addEventListener('change', () => {
+    if (window.parsedCreatives) renderCreativeGrid(window.parsedCreatives);
+  });
+
+  // Filter checkboxes → re-render creative grid
+  document.querySelectorAll('.fdrop-wrap input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      if (window.parsedCreatives) renderCreativeGrid(window.parsedCreatives);
+    });
+  });
 })();
