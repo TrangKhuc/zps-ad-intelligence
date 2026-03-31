@@ -14,17 +14,17 @@
       <span class="logo-badge">PRO</span>
     </div>
     <div class="topbar-path">
-      <span id="active-comp-name">Garena Free Fire</span>
+      <span id="active-comp-name">—</span>
       <span class="sep">/</span>
-      <span class="active-path">Creative Intel</span>
+      <span class="active-path" id="active-tab-name">Overview</span>
     </div>
     <div class="topbar-right">
-      <div class="sync-dot"></div>
-      <span class="sync-label" id="sync-label">Real data · Conquian Zingplay · Jan–Mar 2026</span>
-      <span class="data-badge" id="data-badge">Sensor Tower</span>
-      <button class="card-btn" onclick="toggleUpload()" style="margin-left:8px;">
-        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px;"><path d="M8 11V3M4 6l4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 13h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-        Upload data
+      <div class="sync-dot" id="sync-dot"></div>
+      <span class="sync-label" id="sync-label">Sensor Tower API</span>
+      <span class="data-badge" id="data-badge">API</span>
+      <button id="sync-btn" onclick="handleSyncAll()" style="margin-left:8px;padding:6px 14px;background:#4d65ff;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">
+        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" style="vertical-align:middle;margin-right:4px;"><path d="M1 8a7 7 0 0112.9-3.8M15 8a7 7 0 01-12.9 3.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><polyline points="14,1 14,5 10,5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><polyline points="2,15 2,11 6,11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Sync API
       </button>
     </div>
   </div>

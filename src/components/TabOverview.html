@@ -16,22 +16,20 @@
           border-bottom: 2px solid var(--border);
         }
         .cmp-table th {
-          padding: 8px 12px;
+          padding: 6px 8px;
           text-align: left;
-          font-size: 9px;
-          font-weight: 500;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          color: var(--t3);
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--t2);
           white-space: nowrap;
         }
         .cmp-table th.cmp-metric-col {
-          color: var(--t3);
-          min-width: 130px;
+          color: var(--t2);
+          min-width: 100px;
         }
         .cmp-table th.cmp-app-col {
           text-align: right;
-          min-width: 110px;
+          min-width: 100px;
         }
         .cmp-table th.cmp-active-col {
           background: var(--accent-light);
@@ -40,7 +38,7 @@
           text-align: right;
         }
         .cmp-table tbody tr {
-          border-bottom: 1px solid var(--border);
+          border-bottom: 1px solid #f3f4f6;
           transition: background 0.12s;
         }
         .cmp-table tbody tr:last-child {
@@ -50,21 +48,20 @@
           background: var(--accent-light);
         }
         .cmp-table td {
-          padding: 9px 12px;
+          padding: 6px 8px;
           color: var(--t1);
           font-family: var(--fm);
           font-size: 12px;
         }
         .cmp-table td.cmp-metric-label {
-          font-size: 11px;
-          color: var(--t2);
-          font-family: var(--fd);
-          font-style: normal;
+          font-size: 12px;
+          color: var(--t1);
+          font-weight: 500;
         }
         .cmp-table td.cmp-val {
           text-align: right;
           font-family: var(--fd);
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 500;
           color: var(--t0);
         }
@@ -72,22 +69,16 @@
           background: var(--accent-light);
           text-align: right;
           font-family: var(--fd);
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 600;
           color: var(--t0);
         }
         .cmp-winner-badge {
           display: inline-block;
-          background: rgba(16,185,129,0.12);
-          color: var(--green);
-          font-family: var(--fm);
-          font-size: 9px;
-          font-weight: 600;
-          padding: 1px 5px;
-          border-radius: 4px;
-          margin-left: 6px;
+          color: #f59e0b;
+          font-size: 10px;
+          margin-left: 4px;
           vertical-align: middle;
-          letter-spacing: 0.04em;
         }
         .cmp-app-name {
           font-family: var(--fd);
@@ -102,11 +93,20 @@
         }
       </style>
 
+      <!-- ── 1. Signal Banner (first, per mockup) ── -->
+      <div class="signal-banner" id="signal-banner" style="margin-bottom:12px;">
+        <div class="signal-banner-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+        <div class="signal-banner-body">
+          <div class="signal-headline" id="ov-signal-headline" style="font-weight:600;">Loading signal…</div>
+          <div class="signal-detail" id="ov-signal-detail" style="font-size:11px;">—</div>
+        </div>
+      </div>
+
+      <!-- ── 2. Competitor Comparison Table ── -->
       <div class="cmp-wrap card">
         <div class="card-head">
           <div>
-            <div class="card-title">Competitor Comparison</div>
-            <div class="card-sub">Active app vs watchlist — all metrics from latest data</div>
+            <div class="card-title" style="font-weight:600;">Competitor Comparison</div>
           </div>
         </div>
         <div class="card-body" style="padding-top:0;">
@@ -127,215 +127,110 @@
                 </tr>
               </thead>
               <tbody id="cmp-tbody">
-                <tr>
-                  <td class="cmp-metric-label">CHI</td>
-                  <td class="cmp-active-val" id="cmp-chi-app1">—</td>
-                  <td class="cmp-val" id="cmp-chi-app2">—</td>
-                  <td class="cmp-val" id="cmp-chi-app3">—</td>
-                </tr>
-                <tr>
-                  <td class="cmp-metric-label">CREI</td>
-                  <td class="cmp-active-val" id="cmp-crei-app1">—</td>
-                  <td class="cmp-val" id="cmp-crei-app2">—</td>
-                  <td class="cmp-val" id="cmp-crei-app3">—</td>
-                </tr>
-                <tr>
-                  <td class="cmp-metric-label">Total Downloads</td>
-                  <td class="cmp-active-val" id="cmp-dl-app1">—</td>
-                  <td class="cmp-val" id="cmp-dl-app2">—</td>
-                  <td class="cmp-val" id="cmp-dl-app3">—</td>
-                </tr>
-                <tr>
-                  <td class="cmp-metric-label">Revenue</td>
-                  <td class="cmp-active-val" id="cmp-rev-app1">—</td>
-                  <td class="cmp-val" id="cmp-rev-app2">—</td>
-                  <td class="cmp-val" id="cmp-rev-app3">—</td>
-                </tr>
-                <tr>
-                  <td class="cmp-metric-label">Active Creatives</td>
-                  <td class="cmp-active-val" id="cmp-creatives-app1">—</td>
-                  <td class="cmp-val" id="cmp-creatives-app2">—</td>
-                  <td class="cmp-val" id="cmp-creatives-app3">—</td>
-                </tr>
-                <tr>
-                  <td class="cmp-metric-label">Networks</td>
-                  <td class="cmp-active-val" id="cmp-networks-app1">—</td>
-                  <td class="cmp-val" id="cmp-networks-app2">—</td>
-                  <td class="cmp-val" id="cmp-networks-app3">—</td>
-                </tr>
-                <tr>
-                  <td class="cmp-metric-label">Avg new creatives / wk</td>
-                  <td class="cmp-active-val" id="cmp-avgwk-app1">—</td>
-                  <td class="cmp-val" id="cmp-avgwk-app2">—</td>
-                  <td class="cmp-val" id="cmp-avgwk-app3">—</td>
-                </tr>
-                <tr>
-                  <td class="cmp-metric-label">DL Trend</td>
-                  <td class="cmp-active-val" id="cmp-trend-app1">—</td>
-                  <td class="cmp-val" id="cmp-trend-app2">—</td>
-                  <td class="cmp-val" id="cmp-trend-app3">—</td>
-                </tr>
+                <tr><td class="cmp-metric-label">CHI</td><td class="cmp-active-val" id="cmp-chi-app1">—</td><td class="cmp-val" id="cmp-chi-app2">—</td><td class="cmp-val" id="cmp-chi-app3">—</td></tr>
+                <tr><td class="cmp-metric-label">CREI</td><td class="cmp-active-val" id="cmp-crei-app1">—</td><td class="cmp-val" id="cmp-crei-app2">—</td><td class="cmp-val" id="cmp-crei-app3">—</td></tr>
+                <tr><td class="cmp-metric-label">Downloads</td><td class="cmp-active-val" id="cmp-dl-app1">—</td><td class="cmp-val" id="cmp-dl-app2">—</td><td class="cmp-val" id="cmp-dl-app3">—</td></tr>
+                <tr><td class="cmp-metric-label">Revenue</td><td class="cmp-active-val" id="cmp-rev-app1">—</td><td class="cmp-val" id="cmp-rev-app2">—</td><td class="cmp-val" id="cmp-rev-app3">—</td></tr>
+                <tr><td class="cmp-metric-label">Creatives</td><td class="cmp-active-val" id="cmp-creatives-app1">—</td><td class="cmp-val" id="cmp-creatives-app2">—</td><td class="cmp-val" id="cmp-creatives-app3">—</td></tr>
+                <tr><td class="cmp-metric-label">Networks</td><td class="cmp-active-val" id="cmp-networks-app1">—</td><td class="cmp-val" id="cmp-networks-app2">—</td><td class="cmp-val" id="cmp-networks-app3">—</td></tr>
+                <tr><td class="cmp-metric-label">DL Trend</td><td class="cmp-active-val" id="cmp-trend-app1">—</td><td class="cmp-val" id="cmp-trend-app2">—</td><td class="cmp-val" id="cmp-trend-app3">—</td></tr>
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <!-- Signal banner — real insight -->
-      <div class="signal-banner" id="signal-banner">
-        <div class="signal-banner-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
-        <div class="signal-banner-body">
-          <div class="signal-headline" id="ov-signal-headline">Loading signal…</div>
-          <div class="signal-detail" id="ov-signal-detail">—</div>
+      <!-- ── 3. Downloads Comparison Chart (full width per mockup) ── -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-head">
+          <div>
+            <div class="card-title" style="font-weight:600;">Downloads Comparison</div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select class="sort-sel" id="ov-dl-chart-range" onchange="updateOverviewCharts()" style="font-size:11px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;color:var(--t2);background:#fff;">
+              <option value="3">Weekly · 8w</option>
+              <option value="6">Weekly · 12w</option>
+            </select>
+            <div class="chart-type-toggle" data-chart="c-ov-dl-compare" style="display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+              <button onclick="toggleChartType('c-ov-dl-compare','bar',this)" class="ct-btn ct-active" style="padding:4px 10px;font-size:11px;border:none;cursor:pointer;font-family:inherit;background:#4d65ff;color:#fff;font-weight:500;">Bar</button>
+              <button onclick="toggleChartType('c-ov-dl-compare','line',this)" class="ct-btn" style="padding:4px 10px;font-size:11px;border:none;border-left:1px solid var(--border);cursor:pointer;font-family:inherit;background:#fff;color:var(--t2);">Line</button>
+            </div>
+          </div>
         </div>
+        <div class="card-body"><div class="f2-chart-wrap"><canvas id="c-ov-dl-compare"></canvas></div></div>
       </div>
 
-      <!-- KPI mini cards -->
-      <div class="kpi-mini-grid">
-        <div class="kpi-mini">
-          <div class="kpi-mini-label">Total downloads</div>
-          <div class="kpi-mini-val" id="ov-total-dl">—</div>
-          <div class="kpi-mini-sub" id="ov-dl-sub">—</div>
-        </div>
-        <div class="kpi-mini">
-          <div class="kpi-mini-label">Revenue</div>
-          <div class="kpi-mini-val" id="ov-total-rev">—</div>
-          <div class="kpi-mini-sub" id="ov-rev-sub">—</div>
-        </div>
-        <div class="kpi-mini">
-          <div class="kpi-mini-label">Active creatives</div>
-          <div class="kpi-mini-val" id="ov-active-creatives">—</div>
-          <div class="kpi-mini-sub" id="ov-active-sub">—</div>
-        </div>
-        <div class="kpi-mini">
-          <div class="kpi-mini-label">Avg new creatives/week</div>
-          <div class="kpi-mini-val" id="ov-avg-wk">—</div>
-          <div class="kpi-mini-sub" id="ov-avg-wk-sub">—</div>
-        </div>
-      </div>
-
-      <!-- 3-col signals -->
-      <div class="summary-grid">
-        <div class="summary-card" onclick="switchTab('f1', document.querySelectorAll('.tab-btn')[1])">
-          <div class="sc-label" id="ov-sc1-label">Creative Profile</div>
-          <div class="sc-headline" id="ov-sc1-headline">—</div>
-          <div class="sc-meta" id="ov-sc1-meta">—</div>
-          <span class="sc-arrow">Xem chi tiết creative mix →</span>
-        </div>
-        <div class="summary-card" onclick="switchTab('f2', document.querySelectorAll('.tab-btn')[2])">
-          <div class="sc-label" id="ov-sc2-label">Download trend</div>
-          <div class="sc-headline" id="ov-sc2-headline">—</div>
-          <div class="sc-meta" id="ov-sc2-meta">—</div>
-          <span class="sc-arrow">Xem heatmap channel mix →</span>
-        </div>
-        <div class="summary-card" onclick="switchTab('f3', document.querySelectorAll('.tab-btn')[3])">
-          <div class="sc-label" id="ov-sc3-label">Market concentration</div>
-          <div class="sc-headline" id="ov-sc3-headline">—</div>
-          <div class="sc-meta" id="ov-sc3-meta">—</div>
-          <span class="sc-arrow">Xem playbook recommendations →</span>
-        </div>
-      </div>
-
-      <!-- Country breakdown -->
-      <div class="grid-2" style="gap:16px;">
+      <!-- ── 4. Revenue + Creative Volume (grid-2 per mockup) ── -->
+      <div class="grid-2" style="gap:12px;margin-bottom:12px;">
         <div class="card">
           <div class="card-head">
             <div>
-              <div class="card-title">Top markets by downloads</div>
-              <div class="card-sub" id="ov-date-range">—</div>
+              <div class="card-title" style="font-weight:600;">Revenue Comparison</div>
+            </div>
+            <div class="chart-type-toggle" data-chart="c-ov-rev-compare" style="display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+              <button onclick="toggleChartType('c-ov-rev-compare','bar',this)" class="ct-btn ct-active" style="padding:4px 10px;font-size:11px;border:none;cursor:pointer;font-family:inherit;background:#4d65ff;color:#fff;font-weight:500;">Bar</button>
+              <button onclick="toggleChartType('c-ov-rev-compare','line',this)" class="ct-btn" style="padding:4px 10px;font-size:11px;border:none;border-left:1px solid var(--border);cursor:pointer;font-family:inherit;background:#fff;color:var(--t2);">Line</button>
             </div>
           </div>
-          <div class="card-body">
-            <div class="country-bar" id="ov-country-bars">
-              <div class="cb-row"><div class="cb-label">—</div><div class="cb-track"><div class="cb-fill" style="width:0%;"></div></div><div class="cb-val">—</div></div>
-            </div>
-            <div class="note" style="margin-top:14px;">
-              <div class="note-label">Signal</div>
-              <div class="note-text" id="ov-country-signal">—</div>
-            </div>
-          </div>
+          <div class="card-body"><div class="f2-chart-wrap"><canvas id="c-ov-rev-compare"></canvas></div></div>
         </div>
-
         <div class="card">
           <div class="card-head">
             <div>
-              <div class="card-title">Revenue vs Downloads mismatch</div>
-              <div class="card-sub">RPD gap analysis</div>
+              <div class="card-title" style="font-weight:600;">Creative Volume Trend</div>
+            </div>
+            <div class="chart-type-toggle" data-chart="c-ov-creative-trend" style="display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+              <button onclick="toggleChartType('c-ov-creative-trend','bar',this)" class="ct-btn" style="padding:4px 10px;font-size:11px;border:none;border-right:1px solid var(--border);cursor:pointer;font-family:inherit;background:#fff;color:var(--t2);">Bar</button>
+              <button onclick="toggleChartType('c-ov-creative-trend','line',this)" class="ct-btn ct-active" style="padding:4px 10px;font-size:11px;border:none;cursor:pointer;font-family:inherit;background:#4d65ff;color:#fff;font-weight:500;">Line</button>
             </div>
           </div>
-          <div class="card-body">
-            <div class="country-bar" style="margin-bottom:16px;">
-              <div style="font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Revenue share</div>
-              <div class="cb-row">
-                <div class="cb-label">US</div>
-                <div class="cb-track"><div class="cb-fill" style="width:0%;background:var(--green);"></div></div>
-                <div class="cb-val" id="ov-us-rev" style="color:var(--green);">—</div>
-              </div>
-              <div class="cb-row">
-                <div class="cb-label">MX</div>
-                <div class="cb-track"><div class="cb-fill" style="width:0%;background:var(--blue);"></div></div>
-                <div class="cb-val" id="ov-mx-rev">—</div>
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-              <div style="background:var(--page);border-radius:6px;padding:10px;">
-                <div style="font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;margin-bottom:4px;">US RPD est.</div>
-                <div style="font-family:var(--fd);font-size:18px;font-weight:700;color:var(--green);" id="ov-us-rpd">—</div>
-                <div style="font-family:var(--fm);font-size:9px;color:var(--t2);">per download</div>
-              </div>
-              <div style="background:var(--page);border-radius:6px;padding:10px;">
-                <div style="font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;margin-bottom:4px;">MX RPD est.</div>
-                <div style="font-family:var(--fd);font-size:18px;font-weight:700;color:var(--amber);" id="ov-mx-rpd">—</div>
-                <div style="font-family:var(--fm);font-size:9px;color:var(--t2);" id="ov-rpd-gap">—</div>
-              </div>
-            </div>
-          </div>
+          <div class="card-body"><div class="f2-chart-wrap"><canvas id="c-ov-creative-trend"></canvas></div></div>
         </div>
       </div>
 
-      <!-- Action Queue -->
-      <div class="aq">
-        <div class="aq-head" style="display:flex;justify-content:space-between;align-items:center;">
-          Recommended next steps
-          <button class="export-btn" onclick="exportReport()">
-            <svg width="11" height="11" viewBox="0 0 16 16" fill="none"><path d="M8 3v8M5 8l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 13h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            Export report
-          </button>
-        </div>
-        <div id="ov-action-queue">
-        <div class="aq-tier">
-          <div class="aq-tier-label red"><span class="status-dot critical"></span> Tuần này</div>
-          <div class="aq-item">
-            <span class="aq-action">Audit và pause creatives có duration >120 ngày còn đang chạy</span>
-            <span class="aq-outcome" id="ov-aq1">—</span>
-          </div>
-          <div class="aq-item">
-            <span class="aq-action">Review lý do downloads giảm dù creative volume cao</span>
-            <span class="aq-outcome" id="ov-aq2">—</span>
+      <!-- ── 5. Market Intelligence — multi-app (grid-3 layout per mockup) ── -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-head">
+          <div>
+            <div class="card-title" style="font-weight:600;">Market Intelligence — All Apps</div>
           </div>
         </div>
-        <div class="aq-tier">
-          <div class="aq-tier-label yellow"><span class="status-dot warn"></span> 2 tuần tới</div>
-          <div class="aq-item">
-            <span class="aq-action">Test mở rộng sang TikTok hoặc Google UAC</span>
-            <span class="aq-outcome" id="ov-aq3">—</span>
+        <div class="card-body" style="padding-top:0;">
+          <div id="ov-market-intel" style="overflow-x:auto;">
+            <table class="cmp-table" style="min-width:500px;">
+              <thead>
+                <tr>
+                  <th class="cmp-metric-col">Country</th>
+                  <th class="cmp-app-col" id="mi-head-app1">App 1</th>
+                  <th class="cmp-app-col" id="mi-head-app2">App 2</th>
+                  <th class="cmp-app-col" id="mi-head-app3">App 3</th>
+                </tr>
+              </thead>
+              <tbody id="mi-tbody">
+                <tr><td class="cmp-metric-label" colspan="4" style="text-align:center;color:var(--t3);">Select apps to see market comparison</td></tr>
+              </tbody>
+            </table>
           </div>
-          <div class="aq-item">
-            <span class="aq-action">Optimize creative volume vs quality ratio</span>
-            <span class="aq-outcome" id="ov-aq4">—</span>
-          </div>
+          <div class="insight-pills" id="mi-pills" style="margin-top:8px;"></div>
         </div>
-        <div class="aq-tier">
-          <div class="aq-tier-label green"><span class="status-dot ok"></span> Monitor</div>
-          <div class="aq-item">
-            <span class="aq-action">Theo dõi weekly downloads trend</span>
-            <span class="aq-outcome" id="ov-aq5">—</span>
-          </div>
-          <div class="aq-item">
-            <span class="aq-action">Theo dõi Organic vs Paid ratio</span>
-            <span class="aq-outcome" id="ov-aq6">—</span>
-          </div>
-        </div>
-        </div>
+      </div>
+
+      <!-- ── 6. Export button (per mockup) ── -->
+      <div style="text-align:right;margin-bottom:12px;">
+        <button class="export-btn" onclick="exportReport()" style="padding:10px 24px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+          Export Report (.md)
+        </button>
+      </div>
+
+      <!-- Hidden elements for JS compatibility — keep IDs but hide -->
+      <div style="display:none;">
+        <span id="ov-total-dl"></span><span id="ov-total-rev"></span><span id="ov-active-creatives"></span><span id="ov-avg-wk"></span>
+        <span id="ov-dl-sub"></span><span id="ov-rev-sub"></span><span id="ov-active-sub"></span><span id="ov-avg-wk-sub"></span>
+        <span id="ov-sc1-label"></span><span id="ov-sc1-headline"></span><span id="ov-sc1-meta"></span>
+        <span id="ov-sc2-label"></span><span id="ov-sc2-headline"></span><span id="ov-sc2-meta"></span>
+        <span id="ov-sc3-label"></span><span id="ov-sc3-headline"></span><span id="ov-sc3-meta"></span>
+        <span id="ov-date-range"></span><span id="ov-country-signal"></span>
+        <span id="ov-us-rev"></span><span id="ov-mx-rev"></span><span id="ov-us-rpd"></span><span id="ov-mx-rpd"></span><span id="ov-rpd-gap"></span>
+        <span id="ov-aq1"></span><span id="ov-aq2"></span><span id="ov-aq3"></span><span id="ov-aq4"></span><span id="ov-aq5"></span><span id="ov-aq6"></span>
       </div>
     </div>

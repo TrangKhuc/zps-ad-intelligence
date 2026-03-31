@@ -1,76 +1,81 @@
-<!-- TabTimerHeatmap -->
-<!-- ═══════════ F2: TIMER/HEATMAP ═══════════ -->
+<!-- TabTimerHeatmap → Ad Networks -->
+<!-- ═══════════ F2: AD NETWORKS ═══════════ -->
     <div class="content" id="tab-f2">
-      <div class="grid-2">
 
-        <!-- Weekly launch timeline -->
-        <div class="card">
-          <div class="card-head">
-            <div>
-              <div class="card-title">Creative launch timeline</div>
-              <div class="card-sub">New creatives per week · Sensor Tower</div>
-            </div>
-          </div>
-          <div class="card-body">
-            <div style="font-family:var(--fm);font-size:9px;color:var(--t2);margin-bottom:10px;" id="f2-timeline-summary">Loading…</div>
-
-            <div id="f2-timeline-container">
-              <div class="tl-item">
-                <div class="tl-dot d-active"></div>
-                <div class="tl-body">
-                  <div class="tl-name">—</div>
-                  <div class="tl-meta">Waiting for data…</div>
-                </div>
-                <div class="tl-spend">—</div>
-              </div>
-            </div><!-- /f2-timeline-container -->
-          </div>
+      <!-- ── 1. Network Health Summary ── -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-head">
+          <div><div class="card-title" style="font-weight:600;">Network Health Summary</div></div>
         </div>
-
-        <!-- Right col -->
-        <div style="display:flex;flex-direction:column;gap:16px;">
-
-          <!-- Download trend chart -->
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <div class="card-title">Weekly downloads trend</div>
-                <div class="card-sub">Total downloads vs New creatives</div>
-              </div>
+        <div class="card-body">
+          <div class="grid-3" id="f2-net-summary">
+            <div id="f2-kpi-networks" style="padding:14px;border-radius:8px;border:1px solid var(--border);background:#f8f9fb;">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--t3);font-weight:600;">Active Networks</div>
+              <div style="font-size:22px;font-weight:700;margin:4px 0;">—</div>
+              <div style="font-size:10px;color:var(--t2);">Loading…</div>
             </div>
-            <div class="card-body">
-              <div class="f2-chart-wrap"><canvas id="c-f2-dl"></canvas></div>
-              <div style="display:flex;gap:12px;margin-top:4px;">
-                <span style="font-family:var(--fm);font-size:9px;color:var(--accent);">■ New creatives/week</span>
-                <span style="font-family:var(--fm);font-size:9px;color:var(--coral);">— Downloads (K)</span>
-              </div>
+            <div id="f2-kpi-hhi" style="padding:14px;border-radius:8px;border:1px solid var(--border);background:#f8f9fb;">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--t3);font-weight:600;">Concentration (HHI)</div>
+              <div style="font-size:22px;font-weight:700;margin:4px 0;">—</div>
+              <div style="font-size:10px;color:var(--t2);">Loading…</div>
+            </div>
+            <div id="f2-kpi-stability" style="padding:14px;border-radius:8px;border:1px solid var(--border);background:#f8f9fb;">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--t3);font-weight:600;">Stability Score</div>
+              <div style="font-size:22px;font-weight:700;margin:4px 0;">—</div>
+              <div style="font-size:10px;color:var(--t2);">Loading…</div>
             </div>
           </div>
-
-          <!-- Channel heatmap -->
-          <div class="card">
-            <div class="card-head">
-              <div>
-                <div class="card-title">Channel mix — downloads</div>
-                <div class="card-sub">Sensor Tower Download Channel</div>
-              </div>
-            </div>
-            <div class="card-body" style="overflow-x:auto;">
-              <div class="hm" id="f2-heatmap-container" style="grid-template-columns:110px repeat(3,1fr) 54px;">
-                <div></div>
-                <div class="hm-head">—</div><div class="hm-head">—</div><div class="hm-head">—</div><div class="hm-head">Total</div>
-                <div class="hm-label">—</div>
-                <div class="hm-cell">—</div><div class="hm-cell">—</div><div class="hm-cell">—</div>
-                <div class="hm-delta">—</div>
-              </div>
-              <div style="font-family:var(--fm);font-size:9px;color:var(--t3);margin-top:8px;">Data populates on app selection or CSV upload.</div>
-            </div>
-          </div>
+          <div class="insight-pills" id="f2-summary-pills" style="margin-top:10px;"></div>
         </div>
       </div>
 
-      <div class="note">
-        <div class="note-label">Analyst note — Timer / Channel Mix</div>
-        <div class="note-text" id="f2-analyst-note">Select a competitor or upload CSV data to see channel analysis and creative timeline insights.</div>
+      <!-- ── 2. Channel Mix (doughnut + breakdown) ── -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-head">
+          <div><div class="card-title" style="font-weight:600;">Channel Mix</div></div>
+        </div>
+        <div class="card-body">
+          <div class="grid-2" style="align-items:center;">
+            <div class="f2-chart-wrap" style="height:200px;"><canvas id="c-f2-channel-mix"></canvas></div>
+            <div id="f2-mix-breakdown" style="font-size:12px;">
+              <div style="font-size:10px;color:var(--t3);">Loading channel data…</div>
+            </div>
+          </div>
+          <div class="insight-pills" id="f2-mix-pills" style="margin-top:10px;"></div>
+        </div>
       </div>
+
+      <!-- ── 3. Monthly Impression Trend ── -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-head">
+          <div><div class="card-title" style="font-weight:600;">Monthly Impression Trend</div></div>
+          <div class="chart-type-toggle" style="display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+            <button onclick="toggleF2TrendStack('stacked',this)" class="ct-btn ct-active" style="padding:4px 10px;font-size:11px;border:none;cursor:pointer;font-family:inherit;background:#4d65ff;color:#fff;font-weight:500;">Stacked</button>
+            <button onclick="toggleF2TrendStack('grouped',this)" class="ct-btn" style="padding:4px 10px;font-size:11px;border:none;border-left:1px solid var(--border);cursor:pointer;font-family:inherit;background:#fff;color:var(--t2);">Grouped</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="f2-chart-wrap" style="height:200px;"><canvas id="c-f2-monthly-trend"></canvas></div>
+          <div class="insight-pills" id="f2-trend-pills" style="margin-top:10px;"></div>
+        </div>
+      </div>
+
+      <!-- ── 4. Ad Network Performance Table (existing) ── -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-head">
+          <div>
+            <div class="card-title" style="font-weight:600;">Ad Network Performance</div>
+            <div style="font-size:10px;color:var(--t2);">Monthly Impressions by Ad Network</div>
+          </div>
+        </div>
+        <div class="card-body" style="overflow-x:auto;">
+          <div id="f2-heatmap-container">
+            <div style="font-size:11px;color:var(--t3);text-align:center;padding:20px;">Loading network data…</div>
+          </div>
+          <div class="insight-pills" id="f2-network-pills" style="margin-top:8px;"></div>
+        </div>
+      </div>
+
+      <!-- Hidden for JS compat -->
+      <div style="display:none;"><span id="f2-analyst-note"></span></div>
     </div><!-- /f2 -->

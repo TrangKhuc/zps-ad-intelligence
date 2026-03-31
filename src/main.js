@@ -1,5 +1,111 @@
 // ZPS Ad Intelligence — Main JavaScript
 
+// ── GLOBAL FILTERS STATE ──
+window.globalFilters = {
+  platform: 'all',
+  market: 'all',
+  daterange: '90',
+  customStart: null,
+  customEnd: null,
+};
+
+function setGlobalFilter(type, value, btn) {
+  window.globalFilters[type] = value;
+  if (btn) {
+    const toggle = btn.closest('.gf-toggle');
+    if (toggle) {
+      toggle.querySelectorAll('.gf-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  }
+  applyGlobalFilters();
+}
+
+function handleDateRangeChange(value) {
+  const customWrap = document.getElementById('gf-custom-wrap');
+  if (value === 'custom') {
+    if (customWrap) customWrap.style.display = 'flex';
+    // Set default custom range: last 90 days
+    const end = new Date();
+    const start = new Date(end - 90 * 24 * 60 * 60 * 1000);
+    const startInput = document.getElementById('gf-date-start');
+    const endInput = document.getElementById('gf-date-end');
+    if (startInput) startInput.value = start.toISOString().split('T')[0];
+    if (endInput) endInput.value = end.toISOString().split('T')[0];
+    return; // Don't apply until user clicks Apply
+  }
+  if (customWrap) customWrap.style.display = 'none';
+  window.globalFilters.daterange = value;
+  window.globalFilters.customStart = null;
+  window.globalFilters.customEnd = null;
+  applyGlobalFilters();
+}
+
+function applyCustomDateRange() {
+  const startInput = document.getElementById('gf-date-start');
+  const endInput = document.getElementById('gf-date-end');
+  if (!startInput?.value || !endInput?.value) return;
+  window.globalFilters.daterange = 'custom';
+  window.globalFilters.customStart = startInput.value;
+  window.globalFilters.customEnd = endInput.value;
+  applyGlobalFilters();
+}
+
+function applyGlobalFilters() {
+  const f = window.globalFilters;
+  const marketSel = document.getElementById('gf-market');
+  if (marketSel) f.market = marketSel.value;
+
+  // Update context label
+  const ctx = document.getElementById('gf-context-label');
+  if (ctx) {
+    const platLabel = f.platform === 'all' ? 'All platforms' : f.platform === 'ios' ? 'iOS' : 'Android';
+    const marketLabel = f.market === 'all' ? 'All markets' : f.market === 'WW' ? 'Worldwide' : f.market;
+    let dateLabel;
+    if (f.daterange === 'custom' && f.customStart && f.customEnd) {
+      dateLabel = f.customStart + ' → ' + f.customEnd;
+    } else {
+      const labels = { '7': 'Last 7 days', '14': 'Last 14 days', '30': 'Last 30 days', '60': 'Last 60 days', '90': 'Last 90 days', '180': 'Last 6 months', '365': 'Last 1 year' };
+      dateLabel = labels[f.daterange] || 'Last 90 days';
+    }
+    ctx.textContent = platLabel + ' · ' + marketLabel + ' · ' + dateLabel;
+  }
+
+  // Re-fetch creatives with filters
+  if (window.activeAppId && window.api) {
+    window.api.getCreatives(window.activeAppId, {
+      limit: 200,
+      platform: f.platform !== 'all' ? f.platform : undefined,
+      date_range: f.daterange !== 'custom' ? f.daterange : undefined,
+    }).then(data => {
+      const creatives = data.creatives || data.results || data.data || [];
+      if (!creatives.length) return;
+      const now = Date.now();
+      window.parsedCreatives = creatives.map(c => {
+        const firstSeen = c.first_seen ? new Date(c.first_seen) : null;
+        const dur = firstSeen ? Math.round((now - firstSeen.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+        return {
+          id: c.sensor_tower_creative_id || c.id || '',
+          title: c.title || null,
+          url: c.preview_url || '',
+          thumbnail_url: c.thumbnail_url || null,
+          type: c.format || 'video',
+          network: c.network || '',
+          platform: c.platform || '',
+          dur,
+          stage: c.status === 'testing' ? 'Testing' : c.status === 'scaling' ? 'Scaling' : c.status === 'decay' ? 'Decay' : dur < 7 ? 'Launch' : dur < 21 ? 'Testing' : dur < 60 ? 'Scaling' : 'Decay',
+          vidDur: c.duration_seconds || null,
+          firstSeen: c.first_seen || '',
+          lastSeen: c.last_seen || '',
+          tags: (c.creative_tags || c.tags || []).filter(t => t.tag_type === 'hook' || typeof t === 'string').map(t => typeof t === 'string' ? t : t.tag_value),
+          quality: c.quality || null,
+        };
+      });
+      renderCreativeGrid(window.parsedCreatives, 1);
+    }).catch(err => console.warn('Filter refresh failed:', err));
+  }
+}
+
 function set(id, val, cls) {
   const el = document.getElementById(id); if (!el) return;
   el.textContent = val;
@@ -32,13 +138,18 @@ function setNavActive(el) {
 function switchTab(id, btn) {
   document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + id).classList.add('active');
+  const tabEl = document.getElementById('tab-' + id);
+  if (tabEl) tabEl.classList.add('active');
   if (btn && btn.classList.contains('tab-btn')) btn.classList.add('active');
   // sync sidebar
-  const tabToNav = { sum: 0, f1: 1, f2: 2, f3: 3 };
+  const tabToNav = { sum: 0, f1: 1, f2: 2, f3: 3, settings: 4 };
   const navItems = document.querySelectorAll('.sidebar .nav-item');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   if (navItems[tabToNav[id]]) navItems[tabToNav[id]].classList.add('active');
+  // Update topbar active tab name
+  const tabNames = { sum: 'Overview', f1: 'Creative Profile', f2: 'Network & Trends', f3: 'Playbook', settings: 'Settings' };
+  const tabNameEl = document.getElementById('active-tab-name');
+  if (tabNameEl) tabNameEl.textContent = tabNames[id] || id;
 }
 
 // date pill toggle
@@ -235,14 +346,38 @@ function switchChart(type, btn) {
   renderPills(type);
 }
 
+// Toggle creative trends views in Network & Trends tab (mockup Screen 5)
+function switchF2Trend(type, btn) {
+  // Update button styles
+  btn.parentElement.querySelectorAll('.ct-btn').forEach(b => {
+    b.style.background = '#fff';
+    b.style.color = 'var(--t2)';
+    b.style.borderColor = 'var(--border)';
+    b.classList.remove('active');
+  });
+  btn.style.background = 'var(--accent)';
+  btn.style.color = '#fff';
+  btn.style.borderColor = 'var(--accent)';
+  btn.classList.add('active');
+  // Show/hide content areas
+  ['hook', 'format', 'stage'].forEach(t => {
+    const el = document.getElementById('f2-trend-' + t);
+    if (el) el.style.display = t === type ? '' : 'none';
+  });
+}
+
 // Init charts when F1/F2 tabs are first opened
 const origSwitchTab = switchTab;
 window.switchTab = function(id, btn) {
   origSwitchTab(id, btn);
+  if (id === 'sum' && !chartInstances['c-ov-dl-compare']) {
+    setTimeout(initOverviewCharts, 50);
+  }
   if (id === 'f1' && !chartInstances['c-format']) {
     setTimeout(initCharts, 50);
   }
   if (id === 'f2') setTimeout(initF2Chart, 50);
+  if (id === 'settings') updateSettingsTab();
 };
 
 // Also init if F1 is default visible (it's not, but just in case)
@@ -385,23 +520,30 @@ function updateAllUI(d) {
   const f1CreiEl = document.getElementById('f1-crei-big');
   if (f1CreiEl) f1CreiEl.innerHTML = Math.round(d.crei) + ' <span class="delta-badge ' + (d.creiDelta >= 0 ? 'up' : 'down') + '" style="font-size:9px;vertical-align:middle;">' + (d.creiDelta >= 0 ? '↑' : '↓') + Math.abs(Math.round(d.creiDelta||0)) + '</span>';
 
-  // CHI sub-scores
-  s('f1-active-score', Math.round(d.activeRate || 0));
-  s('f1-active-reason', Math.round(d.activeRate || 0) + '% active in 30d window');
-  s('f1-hook-score', Math.round(d.hookDiv || 0));
-  s('f1-hook-reason', (d.typeCombos || 0) + '/5 categories');
-  s('f1-outperform-score', Math.round(d.outperform || 0));
-  s('f1-outperform-reason', Math.round(d.outperform || 0) + '% > 21d median');
-  s('f1-refresh-score', Math.round(d.refreshScore || 0));
-  s('f1-refresh-reason', (d.avgWk || 0).toFixed(1) + '/wk avg');
+  // CHI sub-scores (friendly names)
+  const activeScore = Math.round(d.activeRate || 0);
+  s('f1-active-score', activeScore);
+  s('f1-active-reason', activeScore + '% active in 30d · ' + (activeScore >= 50 ? 'above' : 'below') + ' median (~45%)');
+  const hookScore = Math.round(d.hookDiv || 0);
+  s('f1-hook-score', hookScore);
+  s('f1-hook-reason', (d.typeCombos || 0) + '/5 categories · ' + (hookScore >= 80 ? 'diverse' : hookScore >= 50 ? 'moderate' : 'low'));
+  const winnerScore = Math.round(d.outperform || 0);
+  s('f1-outperform-score', winnerScore);
+  s('f1-outperform-reason', winnerScore + '% beat 21d median · ' + (winnerScore >= 60 ? 'strong' : 'needs work'));
+  const refreshScore = Math.round(d.refreshScore || 0);
+  s('f1-refresh-score', refreshScore);
+  s('f1-refresh-reason', (d.avgWk || 0).toFixed(1) + '/wk · ' + (d.avgWk ? (d.avgWk/3).toFixed(1) + '× median' : '—'));
 
-  // CREI sub-scores
-  s('f1-momentum-score', Math.round(d.momentum || 0));
-  s('f1-momentum-reason', (d.lastWkNew || 0) + ' new last week vs median 3');
-  s('f1-engagement-score', Math.round(d.engagementScore || 0));
-  s('f1-engagement-reason', 'WoW ' + (d.wow >= 0 ? '+' : '') + Math.round(d.wow || 0) + '%');
-  s('f1-stability-score', Math.round(d.stability || 0));
-  s('f1-stability-reason', 'HHI ' + (d.hhi || 0).toFixed(2));
+  // CREI sub-scores (friendly names)
+  const momentumScore = Math.round(d.momentum || 0);
+  s('f1-momentum-score', momentumScore);
+  s('f1-momentum-reason', (d.lastWkNew || 0) + ' new last wk · ' + (momentumScore >= 70 ? 'high output' : momentumScore >= 40 ? 'steady' : 'slow'));
+  const engScore = Math.round(d.engagementScore || 0);
+  s('f1-engagement-score', engScore);
+  s('f1-engagement-reason', 'WoW ' + (d.wow >= 0 ? '+' : '') + Math.round(d.wow || 0) + '% · ' + (d.wow > 5 ? 'growing' : d.wow < -5 ? 'declining' : 'stable'));
+  const stabScore = Math.round(d.stability || 0);
+  s('f1-stability-score', stabScore);
+  s('f1-stability-reason', (d.networkCount || 1) + ' networks · HHI ' + (d.hhi || 0).toFixed(2) + (stabScore >= 70 ? ' (diversified)' : ' (concentrated)'));
 
   // ── CHARTS — rebuild all with computed data ──
   if (d.vbuckets && chartInstances['c-format']) {
@@ -462,31 +604,50 @@ function updateAllUI(d) {
     s('f2-timeline-summary', d.timelineSummary || '');
   }
 
-  // Heatmap
+  // Heatmap — render as proper table (matching mockup Screen 5)
   if (d.channelHeatmap) {
     const hmEl = document.getElementById('f2-heatmap-container');
     if (hmEl) {
       const months = d.channelHeatmap.months || ['Jan','Feb','Mar*'];
       const channels = d.channelHeatmap.channels || [];
-      const colors = {
-        'Organic Search': { bg: 'rgba(77,101,255,', color: 'var(--accent)' },
-        'Paid Display':   { bg: 'rgba(16,185,129,', color: 'var(--green)' },
-        'Web Browser':    { bg: 'rgba(59,130,246,', color: 'var(--blue)' },
-        'Organic Browse':  { bg: 'rgba(245,158,11,', color: 'var(--amber)' },
-        'Paid Search':    { bg: 'rgba(156,163,175,', color: 'var(--t2)' },
-      };
-      hmEl.innerHTML = `
-        <div></div>${months.map(m => `<div class="hm-head">${m}</div>`).join('')}<div class="hm-head">Total</div>
-        ${channels.map(ch => {
-          const maxVal = Math.max(...ch.values);
-          const c = colors[ch.name] || { bg: 'rgba(156,163,175,', color: 'var(--t2)' };
-          return `<div class="hm-label">${ch.name}</div>` +
-            ch.values.map(v => {
-              const opacity = maxVal > 0 ? (v / maxVal * 0.3 + 0.1).toFixed(2) : '0.1';
-              return `<div class="hm-cell" style="background:${c.bg}${opacity});color:${c.color};">${fmtNum(v)}</div>`;
-            }).join('') +
-            `<div class="hm-delta" style="color:var(--t1);font-size:10px;">${fmtNum(ch.total)}</div>`;
-        }).join('')}`;
+      const grandTotal = channels.reduce((s, ch) => s + (ch.total || 0), 0);
+      const hmColors = ['#1d4ed8','#3b82f6','#93c5fd','#dbeafe'];
+      function hmLevel(v, max) {
+        if (!max || !v) return '';
+        const r = v / max;
+        if (r > 0.75) return 'background:#1d4ed8;color:#fff;';
+        if (r > 0.5) return 'background:#3b82f6;color:#fff;';
+        if (r > 0.25) return 'background:#93c5fd;color:#1e40af;';
+        return 'background:#dbeafe;color:#1d4ed8;';
+      }
+      const allMax = Math.max(...channels.flatMap(ch => ch.values));
+      // "All Networks" totals row
+      const allTotals = months.map((_, i) => channels.reduce((s, ch) => s + (ch.values[i] || 0), 0));
+      hmEl.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead><tr>
+          <th style="text-align:left;padding:4px 6px;font-weight:600;color:var(--t2);font-size:10px;">Ad Network</th>
+          ${months.map(m => `<th style="padding:4px 6px;font-weight:600;color:var(--t2);font-size:10px;text-align:center;">${m} (Imp)</th>`).join('')}
+          <th style="padding:4px 6px;font-weight:600;color:var(--t2);font-size:10px;text-align:center;">Total</th>
+          <th style="padding:4px 6px;font-weight:600;color:var(--t2);font-size:10px;text-align:center;">Share</th>
+        </tr></thead>
+        <tbody>
+          <tr style="background:#f0f3ff;font-weight:600;">
+            <td style="padding:4px 6px;font-weight:700;color:var(--accent);">All Networks</td>
+            ${allTotals.map(v => `<td style="padding:4px 6px;text-align:center;">${fmtNum(v)}</td>`).join('')}
+            <td style="padding:4px 6px;text-align:center;color:var(--accent);"><strong>${fmtNum(grandTotal)}</strong></td>
+            <td style="padding:4px 6px;text-align:center;"><strong>100%</strong></td>
+          </tr>
+          ${channels.map(ch => {
+            const share = grandTotal > 0 ? Math.round(ch.total / grandTotal * 100) : 0;
+            return `<tr>
+              <td style="padding:4px 6px;font-weight:500;color:#374151;">${ch.name}</td>
+              ${ch.values.map(v => `<td style="padding:4px 6px;text-align:center;"><span style="display:inline-block;padding:4px 6px;border-radius:3px;font-weight:600;font-size:10px;${hmLevel(v, allMax)}">${fmtNum(v)}</span></td>`).join('')}
+              <td style="padding:4px 6px;text-align:center;font-weight:600;">${fmtNum(ch.total)}</td>
+              <td style="padding:4px 6px;text-align:center;${share > 50 ? 'font-weight:700;' : ''}">${share}%</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
     }
   }
 
@@ -532,6 +693,15 @@ function updateAllUI(d) {
     }
     localStorage.setItem(key, JSON.stringify({ chi: d.chi, crei: d.crei, ts: Date.now() }));
   }
+
+  // ── BUILD 12: Network & Trends ──
+  renderF2CreativeTrends(d);
+
+  // ── BUILD 13: Playbook ──
+  updatePlaybook(d);
+
+  // ── BUILD 17: Remove skeleton ──
+  removeSkeletonStates();
 }
 
 // ── COMPARISON TABLE UPDATER ──
@@ -594,10 +764,17 @@ function updateCompTable(activeData) {
   });
 }
 
-// ── DYNAMIC CREATIVE GRID ──
-function renderCreativeGrid(creatives) {
+// ── DYNAMIC CREATIVE GRID WITH PAGINATION ──
+window._gridPage = 1;
+window._gridPageSize = 12;
+
+function renderCreativeGrid(creatives, page) {
   const grid = document.querySelector('.creative-grid');
   if (!grid || !creatives || !creatives.length) return;
+
+  if (page) window._gridPage = page;
+  const currentPage = window._gridPage || 1;
+  const pageSize = window._gridPageSize || 12;
 
   // Get current filter/sort state
   const sortSel = document.querySelector('.sort-sel');
@@ -610,21 +787,26 @@ function renderCreativeGrid(creatives) {
   else if (sortBy === 'First Seen') sorted.sort((a,b) => (b.firstSeen||'').localeCompare(a.firstSeen||''));
   else if (sortBy === 'Type') sorted.sort((a,b) => (a.type||'').localeCompare(b.type||''));
 
-  // Apply filters
-  const filterDrops = document.querySelectorAll('.fdrop-wrap');
-  filterDrops.forEach(wrap => {
-    const checked = [...wrap.querySelectorAll('input:checked')].map(i => i.value);
-    if (!checked.length || checked.length === wrap.querySelectorAll('input').length) return;
-    const label = wrap.querySelector('.fdrop')?.textContent?.trim() || '';
-    if (label.includes('Type')) {
-      sorted = sorted.filter(c => checked.includes(c.type));
-    } else if (label.includes('Stage')) {
-      sorted = sorted.filter(c => checked.includes(c.stage));
-    }
-  });
+  // Apply select-based filters
+  const fNetwork = document.getElementById('f1-filter-network')?.value;
+  const fPlatform = document.getElementById('f1-filter-platform')?.value;
+  const fFormat = document.getElementById('f1-filter-format')?.value;
+  const fTag = document.getElementById('f1-filter-tag')?.value;
+  const fQuality = document.getElementById('f1-filter-quality')?.value;
 
-  // Render max 30 items
-  const items = sorted.slice(0, 30);
+  if (fNetwork) sorted = sorted.filter(c => (c.networks || '').includes(fNetwork));
+  if (fPlatform) sorted = sorted.filter(c => (c.platform || '').toLowerCase() === fPlatform);
+  if (fFormat) sorted = sorted.filter(c => (c.type || '').toLowerCase() === fFormat);
+  if (fTag) sorted = sorted.filter(c => c.tags && c.tags.some(t => t === fTag));
+  if (fQuality) sorted = sorted.filter(c => (c.quality || 'average') === fQuality);
+
+  // Paginate
+  const totalFiltered = sorted.length;
+  const totalPages = Math.max(1, Math.ceil(totalFiltered / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const start = (safePage - 1) * pageSize;
+  const items = sorted.slice(start, start + pageSize);
+
   const stageColors = { Launch: 'launch', Testing: 'testing', Scaling: 'scaling', Decay: 'decay' };
   const gradients = [
     'linear-gradient(135deg,#f0effe,#e4e2f8)',
@@ -633,30 +815,55 @@ function renderCreativeGrid(creatives) {
     'linear-gradient(135deg,#e3f2fd,#bbdefb)',
   ];
 
-  grid.innerHTML = items.map((c, i) => `
+  grid.innerHTML = items.map((c, i) => {
+    const thumbBg = c.thumbnail_url
+      ? 'background:url(' + c.thumbnail_url + ') center/cover no-repeat, ' + gradients[i%4]
+      : 'background:' + gradients[i%4];
+    // Display title: prefer title, fallback to readable filename from ID
+    const displayTitle = c.title || (c.id || '').replace(/[-_]/g, ' ').slice(0, 28) || 'Untitled';
+    // Format dates
+    const fmtDate = d => d ? new Date(d).toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'2-digit' }) : '';
+    const dateRange = c.firstSeen ? fmtDate(c.firstSeen) + (c.lastSeen ? ' – ' + fmtDate(c.lastSeen) : '') : '';
+    return `
     <div class="cc">
-      <div class="cc-thumb" style="background:${gradients[i%4]};">
-        <svg class="cc-thumb-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      <div class="cc-thumb" style="${thumbBg};">
+        ${!c.thumbnail_url ? '<svg class="cc-thumb-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' : ''}
         ${c.vidDur ? '<span class="cc-dur">' + (c.vidDur < 60 ? '00:' + Math.round(c.vidDur).toString().padStart(2,'0') : Math.floor(c.vidDur/60) + ':' + Math.round(c.vidDur%60).toString().padStart(2,'0')) + '</span>' : ''}
         <span class="cc-type ${c.type}">${c.type}</span>
         <span class="cc-stage ${stageColors[c.stage]||'decay'}">${c.stage}</span>
       </div>
       <div class="cc-meta">
-        <div class="cc-title">${c.id.slice(0,16)}</div>
-        <div class="cc-desc">${c.networks || 'Facebook · Instagram'}</div>
+        <div class="cc-title">${displayTitle}</div>
+        <div class="cc-desc">${c.network || c.networks || 'Unknown'}</div>
         <div class="cc-metrics">
           <div class="ccm"><div class="ccm-label">Life Cycle</div><div class="ccm-val" style="color:${c.dur > 60 ? 'var(--coral)' : c.dur > 21 ? 'var(--amber)' : 'var(--green)'};">${c.dur}d</div></div>
           ${c.vidDur ? '<div class="ccm"><div class="ccm-label">Video dur.</div><div class="ccm-val">' + c.vidDur.toFixed(1) + 's</div></div>' : ''}
         </div>
+        ${dateRange ? '<div style="font-size:9px;color:var(--t3);margin-top:2px;font-family:var(--fm);">' + dateRange + '</div>' : ''}
         <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;" id="cc-tags-${c.id}">
-          ${window.alLabels?.[c.id] ? '<span class="ctag ctag-hook">' + window.alLabels[c.id].hook + '</span>' : ''}
+          ${c.tags ? c.tags.map(t => '<span class="ctag ctag-hook">' + t + '</span>').join('') : ''}
         </div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
-  // Update count
+  // Update count + pagination controls
   const countEl = document.getElementById('f1-grid-count');
-  if (countEl) countEl.textContent = items.length + '/' + creatives.length + ' shown · sorted by ' + sortBy.toLowerCase();
+  if (countEl) countEl.textContent = (start + 1) + '–' + (start + items.length) + ' of ' + totalFiltered + ' · sorted by ' + sortBy.toLowerCase();
+
+  // Render pagination
+  const paginationEl = document.getElementById('f1-pagination');
+  if (paginationEl) {
+    paginationEl.innerHTML = `
+      <button class="card-btn" ${safePage <= 1 ? 'disabled' : ''} onclick="renderCreativeGrid(window.parsedCreatives, ${safePage - 1})" style="font-size:11px;padding:4px 10px;">← Prev</button>
+      <span style="font-family:var(--fm);font-size:11px;color:var(--t2);">Page ${safePage} of ${totalPages}</span>
+      <button class="card-btn" ${safePage >= totalPages ? 'disabled' : ''} onclick="renderCreativeGrid(window.parsedCreatives, ${safePage + 1})" style="font-size:11px;padding:4px 10px;">Next →</button>
+    `;
+  }
+}
+
+function applyCreativeFilters() {
+  if (window.parsedCreatives) renderCreativeGrid(window.parsedCreatives, 1);
 }
 
 // ── ACTION QUEUE CHECKBOXES ──
@@ -1071,23 +1278,36 @@ async function analyzeUploads() {
       _isUploaded: true,
       _creatives: uc.map(r => ({
         id: (r['Creative URL']||'').split('/').pop() || r['Creative URL'] || Math.random().toString(36).slice(2),
+        title: r['Title'] || null,
         url: r['Creative URL'] || '',
+        thumbnail_url: r['Thumbnail URL'] || r['Preview Image'] || null,
         type: r['Type'] || 'video',
+        network: r['Network'] || r['Ad Network'] || '',
+        platform: r['Platform'] || '',
         dur: parseInt(r['Duration'])||0,
         stage: (parseInt(r['Duration'])||0) < 7 ? 'Launch' : (parseInt(r['Duration'])||0) < 21 ? 'Testing' : (parseInt(r['Duration'])||0) < 60 ? 'Scaling' : 'Decay',
         vidDur: parseFloat(r['Video Duration']) || null,
         firstSeen: r['First Seen'] || '',
+        lastSeen: r['Last Seen'] || '',
+        tags: [],
       })),
     });
 
     // Store parsed creatives for grid rendering
     window.parsedCreatives = uc.map(r => ({
       id: (r['Creative URL']||'').split('/').pop() || r['Creative URL'] || Math.random().toString(36).slice(2),
+      title: r['Title'] || null,
       url: r['Creative URL'] || '',
+      thumbnail_url: r['Thumbnail URL'] || r['Preview Image'] || null,
       type: r['Type'] || 'video',
+      network: r['Network'] || r['Ad Network'] || '',
+      platform: r['Platform'] || '',
       dur: parseInt(r['Duration'])||0,
       stage: (parseInt(r['Duration'])||0) < 7 ? 'Launch' : (parseInt(r['Duration'])||0) < 21 ? 'Testing' : (parseInt(r['Duration'])||0) < 60 ? 'Scaling' : 'Decay',
       vidDur: parseFloat(r['Video Duration']) || null,
+      firstSeen: r['First Seen'] || '',
+      lastSeen: r['Last Seen'] || '',
+      tags: [],
     }));
 
     btn.textContent = '✓ Tool updated with real data';
@@ -1230,7 +1450,7 @@ const compDataFull = {
     ],
     countryRev: { US: 91900, MX: 16700 },
     countryDl: { US: 86996, MX: 195619 },
-    topChannel: { name: 'Organic Search', pct: 43 },
+    topChannel: { name: 'Meta (FB + IG + MAN)', pct: 84 },
     monthlyDlSummary: 'Jan 119K → Feb 101K → Mar pace 83K',
     countryInsight: 'MX: 69% downloads nhưng 15% revenue. US: 31% downloads nhưng 84% revenue. RPD gap ~12×.',
     signalHeadline: 'Downloads ↓15% dù creative volume cao: 20 creatives/tuần',
@@ -1251,11 +1471,11 @@ const compDataFull = {
     channelHeatmap: {
       months: ['Jan','Feb','Mar*'],
       channels: [
-        { name: 'Organic Search', values: [51200, 43500, 35800], total: 130500 },
-        { name: 'Paid Display', values: [31700, 27200, 22400], total: 81300 },
-        { name: 'Web Browser', values: [22100, 18600, 15200], total: 55900 },
-        { name: 'Organic Browse', values: [10200, 8700, 7100], total: 26000 },
-        { name: 'Paid Search', values: [3800, 3000, 2500], total: 9300 },
+        { name: 'Meta (FB + IG + MAN)', values: [95000, 78000, 65000], total: 238000 },
+        { name: 'Google UAC', values: [8000, 7000, 6000], total: 21000 },
+        { name: 'TikTok Ads', values: [5000, 4000, 3000], total: 12000 },
+        { name: 'AppLovin', values: [3200, 2800, 2400], total: 8400 },
+        { name: 'Unity Ads', values: [2000, 1700, 1500], total: 5200 },
       ]
     },
     pills: {
@@ -1305,7 +1525,7 @@ const compDataFull = {
     ],
     countryRev: { US: 3120000, BR: 576000 },
     countryDl: { US: 480000, BR: 180000 },
-    topChannel: { name: 'Paid Display', pct: 38 },
+    topChannel: { name: 'Meta (FB + IG)', pct: 38 },
     monthlyDlSummary: 'Stable ~400K/month',
     countryInsight: 'US: 40% DL + 65% revenue. Diversified across 5+ markets.',
     signalHeadline: 'Downloads ↑6% with mature creative portfolio: CHI 78',
@@ -1326,11 +1546,11 @@ const compDataFull = {
     channelHeatmap: {
       months: ['Jan','Feb','Mar*'],
       channels: [
-        { name: 'Paid Display', values: [152000, 158000, 146000], total: 456000 },
-        { name: 'Organic Search', values: [120000, 124000, 118000], total: 362000 },
-        { name: 'Web Browser', values: [80000, 84000, 78000], total: 242000 },
-        { name: 'Organic Browse', values: [40000, 42000, 38000], total: 120000 },
-        { name: 'Paid Search', values: [8000, 7000, 5000], total: 20000 },
+        { name: 'Meta (FB + IG)', values: [152000, 158000, 146000], total: 456000 },
+        { name: 'Google UAC', values: [120000, 124000, 118000], total: 362000 },
+        { name: 'TikTok Ads', values: [80000, 84000, 78000], total: 242000 },
+        { name: 'AppLovin', values: [40000, 42000, 38000], total: 120000 },
+        { name: 'Unity Ads', values: [8000, 7000, 5000], total: 20000 },
       ]
     },
     pills: {
@@ -1380,7 +1600,7 @@ const compDataFull = {
     ],
     countryRev: { US: 4200000, UK: 1800000 },
     countryDl: { US: 875000, UK: 525000 },
-    topChannel: { name: 'Paid Display', pct: 45 },
+    topChannel: { name: 'Meta (FB + IG)', pct: 45 },
     monthlyDlSummary: '~1.2M/month, growing',
     countryInsight: 'Well diversified: top 5 markets each <25%. US: 25% DL, 35% rev.',
     signalHeadline: 'Downloads ↑12% with aggressive UA: 28 creatives/tuần, 4 networks',
@@ -1401,11 +1621,11 @@ const compDataFull = {
     channelHeatmap: {
       months: ['Jan','Feb','Mar*'],
       channels: [
-        { name: 'Paid Display', values: [525000, 560000, 490000], total: 1575000 },
-        { name: 'Organic Search', values: [280000, 295000, 260000], total: 835000 },
-        { name: 'Web Browser', values: [210000, 220000, 195000], total: 625000 },
-        { name: 'Organic Browse', values: [105000, 110000, 98000], total: 313000 },
-        { name: 'Paid Search', values: [55000, 50000, 47000], total: 152000 },
+        { name: 'Meta (FB + IG)', values: [525000, 560000, 490000], total: 1575000 },
+        { name: 'Google UAC', values: [280000, 295000, 260000], total: 835000 },
+        { name: 'TikTok Ads', values: [210000, 220000, 195000], total: 625000 },
+        { name: 'AppLovin', values: [105000, 110000, 98000], total: 313000 },
+        { name: 'Snapchat', values: [55000, 50000, 47000], total: 152000 },
       ]
     },
     pills: {
@@ -1449,11 +1669,981 @@ function selectComp(btn, name) {
   }
 }
 
-// ── INIT: populate UI with default Conquian data on load ──
-(function initDefaultData() {
+// ══════════════════════════════════════════════════════════════
+// API-POWERED FEATURES (Build 8)
+// ══════════════════════════════════════════════════════════════
+
+// Current watchlist state
+window.watchlistApps = [];
+window.activeAppId = null;
+
+// ── SEARCH HANDLER ──
+function handleSearchInput(query) {
+  const dropdown = document.getElementById('search-dropdown');
+  const results = document.getElementById('search-results');
+  const loading = document.getElementById('search-loading');
+  const empty = document.getElementById('search-empty');
+
+  if (!query || query.trim().length < 2) {
+    dropdown.style.display = 'none';
+    return;
+  }
+
+  dropdown.style.display = 'block';
+  loading.style.display = 'block';
+  empty.style.display = 'none';
+  results.innerHTML = '';
+
+  window.api.searchAppsDebounced(query, (apps, err) => {
+    loading.style.display = 'none';
+    if (err || apps.length === 0) {
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    results.innerHTML = apps.map(app => `
+      <div class="search-result-item" onclick="handleAddApp(${JSON.stringify(app).replace(/"/g, '&quot;')})" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f3f4f6;">
+        <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#4d65ff,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0;">
+          ${app.icon_url ? `<img src="${app.icon_url}" style="width:36px;height:36px;border-radius:8px;" onerror="this.style.display='none';this.parentElement.textContent='${(app.app_name || '?')[0]}'">` : (app.app_name || '?')[0]}
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${app.app_name || 'Unknown'}</div>
+          <div style="font-size:11px;color:#6b7280;">${app.publisher || ''} · ${app.platform || ''}</div>
+        </div>
+        <button class="card-btn" style="font-size:11px;padding:4px 10px;">Add +</button>
+      </div>
+    `).join('');
+  });
+}
+
+// Close search dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('search-dropdown');
+  const searchBox = document.querySelector('.search-box');
+  if (dropdown && searchBox && !searchBox.contains(e.target)) {
+    dropdown.style.display = 'none';
+  }
+});
+
+// ── ADD APP TO WATCHLIST ──
+async function handleAddApp(app) {
+  const dropdown = document.getElementById('search-dropdown');
+  const input = document.getElementById('app-search-input');
+  dropdown.style.display = 'none';
+  input.value = '';
+
+  try {
+    const added = await window.api.addToWatchlist(app);
+    // Trigger sync for the new app
+    const syncBtn = document.getElementById('sync-btn');
+    if (syncBtn) { syncBtn.textContent = 'Syncing...'; syncBtn.disabled = true; }
+
+    await window.api.syncApp(added.id);
+
+    if (syncBtn) { syncBtn.textContent = 'Sync API'; syncBtn.disabled = false; }
+
+    // Reload watchlist
+    await loadWatchlist();
+
+    // Select the newly added app
+    selectAppById(added.id);
+  } catch (err) {
+    console.error('Failed to add app:', err);
+    alert('Failed to add app: ' + err.message);
+  }
+}
+
+// ── LOAD WATCHLIST FROM API ──
+async function loadWatchlist() {
+  try {
+    const apps = await window.api.getWatchlist();
+    window.watchlistApps = apps;
+    renderWatchlistChips(apps);
+
+    // If no active app, select the first one
+    if (apps.length > 0 && !window.activeAppId) {
+      selectAppById(apps[0].id);
+    }
+  } catch (err) {
+    console.error('Failed to load watchlist:', err);
+    // Fallback to demo data if API unavailable
+    console.warn('Falling back to demo data');
+  }
+}
+
+// ── RENDER WATCHLIST CHIPS ──
+const CHIP_COLORS = ['#ef4444', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+
+function renderWatchlistChips(apps) {
+  const container = document.getElementById('watchlist-chips');
+  if (!container) return;
+
+  if (apps.length === 0) {
+    container.innerHTML = '<span style="font-size:11px;color:#9ca3af;">No apps yet — search to add</span>';
+    return;
+  }
+
+  container.innerHTML = apps.map((app, i) => {
+    const color = app.color || CHIP_COLORS[i % CHIP_COLORS.length];
+    const isActive = app.id === window.activeAppId;
+    return `
+      <button class="comp-chip ${isActive ? 'active' : ''}" onclick="selectAppById('${app.id}')" data-app-id="${app.id}">
+        <span class="comp-dot" style="background:${color}"></span>
+        ${app.app_name}
+        <span class="chip-genre">${app.latest_snapshot ? fmtNum(app.latest_snapshot.downloads) + ' DLs' : 'Not synced'}</span>
+      </button>
+    `;
+  }).join('');
+}
+
+// ── SELECT APP BY ID ──
+function selectAppById(appId) {
+  window.activeAppId = appId;
+  const app = window.watchlistApps.find(a => a.id === appId);
+  if (!app) return;
+
+  // Update chip active states
+  document.querySelectorAll('.comp-chip').forEach(c => c.classList.remove('active'));
+  const activeChip = document.querySelector(`.comp-chip[data-app-id="${appId}"]`);
+  if (activeChip) activeChip.classList.add('active');
+
+  // Update topbar
+  const nameEl = document.getElementById('active-comp-name');
+  if (nameEl) nameEl.textContent = app.app_name;
+
+  const syncLabel = document.getElementById('sync-label');
+  if (syncLabel) {
+    const synced = app.last_synced_at ? new Date(app.last_synced_at).toLocaleDateString() : 'Never';
+    syncLabel.textContent = `Last sync: ${synced}`;
+  }
+
+  // Update badge
+  const badge = document.getElementById('data-badge');
+  if (badge) { badge.textContent = 'API'; badge.classList.remove('demo'); }
+
+  // If we have a snapshot, convert to the format updateAllUI expects
+  if (app.latest_snapshot) {
+    const snapshot = app.latest_snapshot;
+    const uiData = snapshotToUIData(app, snapshot);
+    updateAllUI(uiData);
+  }
+
+  // Fetch creatives from API for the grid (with thumbnails + titles)
+  if (window.api && window.api.getCreatives) {
+    window.api.getCreatives(appId, { limit: 200 }).then(data => {
+      const creatives = data.creatives || data.results || data.data || [];
+      if (!creatives.length) return;
+
+      const now = Date.now();
+      window.parsedCreatives = creatives.map(c => {
+        const firstSeen = c.first_seen ? new Date(c.first_seen) : null;
+        const lastSeen = c.last_seen ? new Date(c.last_seen) : null;
+        const dur = firstSeen ? Math.round((now - firstSeen.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+        return {
+          id: c.sensor_tower_creative_id || c.id || '',
+          title: c.title || null,
+          url: c.preview_url || '',
+          thumbnail_url: c.thumbnail_url || null,
+          type: c.format || 'video',
+          network: c.network || '',
+          platform: c.platform || '',
+          dur,
+          stage: c.status === 'testing' ? 'Testing' : c.status === 'scaling' ? 'Scaling' : c.status === 'decay' ? 'Decay' : dur < 7 ? 'Launch' : dur < 21 ? 'Testing' : dur < 60 ? 'Scaling' : 'Decay',
+          vidDur: c.duration_seconds || null,
+          firstSeen: c.first_seen || '',
+          lastSeen: c.last_seen || '',
+          tags: (c.creative_tags || c.tags || []).filter(t => t.tag_type === 'hook' || typeof t === 'string').map(t => typeof t === 'string' ? t : t.tag_value),
+          quality: c.quality || null,
+        };
+      });
+      renderCreativeGrid(window.parsedCreatives, 1);
+    }).catch(err => console.warn('Failed to load creatives:', err));
+  }
+}
+
+// ── CONVERT SUPABASE SNAPSHOT → UI DATA FORMAT ──
+// Maps API snapshot to the compDataFull format that updateAllUI() expects
+function snapshotToUIData(app, snapshot) {
+  return {
+    chi: snapshot.chi_score || 0,
+    crei: snapshot.crei_score || 0,
+    totalDL: snapshot.downloads || 0,
+    dlTrend: 0, // TODO: compute from previous snapshot
+    revenue: (snapshot.revenue_cents || 0) / 100,
+    totalCreatives: snapshot.total_creatives || 0,
+    activeCreatives: snapshot.active_creatives || 0,
+    networks: snapshot.networks_count || 0,
+    primaryNetwork: snapshot.primary_network || '—',
+    // Stages — will be populated from creatives API
+    stages: { launch: 0, testing: 0, scaling: 0, decay: 0 },
+    // Placeholders for sections that need creatives data
+    videoBuckets: {},
+    signalHeadline: snapshot.chi_score < 50 ? 'Low creative health — needs attention' : 'Creative pipeline healthy',
+    signalDetail: `CHI ${snapshot.chi_score || 0} · ${snapshot.active_creatives || 0}/${snapshot.total_creatives || 0} active`,
+    pills: [],
+    chiDelta: 0,
+    creiDelta: 0,
+    dlPaceSub: '',
+  };
+}
+
+// ── SYNC ALL ──
+async function handleSyncAll() {
+  const btn = document.getElementById('sync-btn');
+  const dot = document.getElementById('sync-dot');
+  if (btn) { btn.textContent = 'Syncing...'; btn.disabled = true; }
+  if (dot) dot.style.background = '#f59e0b';
+
+  try {
+    await window.api.syncAllApps();
+    await loadWatchlist();
+    // Re-select current app to refresh data
+    if (window.activeAppId) selectAppById(window.activeAppId);
+    if (btn) btn.textContent = 'Sync API';
+    if (dot) dot.style.background = '#10b981';
+  } catch (err) {
+    console.error('Sync failed:', err);
+    if (btn) btn.textContent = 'Sync failed';
+    if (dot) dot.style.background = '#ef4444';
+    setTimeout(() => { if (btn) { btn.textContent = 'Sync API'; btn.disabled = false; } }, 3000);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// BUILD 9: OVERVIEW COMPARISON CHARTS + MARKET INTELLIGENCE
+// ══════════════════════════════════════════════════════════════
+
+const MULTI_APP_COLORS = ['#4d65ff', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899'];
+
+function initOverviewCharts() {
+  const apps = Object.keys(compDataFull);
+  const appData = apps.map(name => compDataFull[name]);
+  if (!appData.length) return;
+
+  // Also use watchlist data if available
+  const allApps = window.watchlistApps.length > 0
+    ? window.watchlistApps.map(a => ({ name: a.app_name, d: a.latest_snapshot ? snapshotToUIData(a, a.latest_snapshot) : compDataFull[a.app_name] })).filter(a => a.d)
+    : apps.map(name => ({ name, d: compDataFull[name] }));
+
+  const labels3m = ['Jan', 'Feb', 'Mar'];
+
+  // Downloads Comparison — grouped bar
+  const dlDatasets = allApps.slice(0, 6).map((app, i) => {
+    const d = app.d;
+    // Estimate monthly from total (split roughly by trend)
+    const total = d.dlTotal || 0;
+    const monthly = d.weeklyDownloads
+      ? splitWeeklyToMonthly(d.weeklyDownloads, 3)
+      : [Math.round(total * 0.38), Math.round(total * 0.34), Math.round(total * 0.28)];
+    return {
+      label: app.name,
+      data: monthly.map(v => Math.round(v / 1000)),
+      backgroundColor: MULTI_APP_COLORS[i] + 'bb',
+      borderRadius: 4,
+      borderSkipped: false,
+    };
+  });
+
+  makeChart('c-ov-dl-compare', 'bar', labels3m, dlDatasets, {
+    plugins: {
+      legend: { display: true, position: 'bottom', labels: { font: { family: 'DM Mono', size: 9 }, color: '#9ca3af', boxWidth: 10, padding: 12 } },
+      tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtNum(ctx.parsed.y * 1000) + ' downloads' } }
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { family: 'DM Mono', size: 9 }, color: '#9ca3af' } },
+      y: { grid: { color: '#f3f4f6' }, ticks: { callback: v => fmtNum(v * 1000), font: { family: 'DM Mono', size: 9 }, color: '#9ca3af' }, beginAtZero: true }
+    }
+  });
+
+  // Revenue Comparison — grouped bar
+  const revDatasets = allApps.slice(0, 6).map((app, i) => {
+    const d = app.d;
+    const total = d.revTotal || d.revenue || 0;
+    const monthly = [Math.round(total * 0.36), Math.round(total * 0.34), Math.round(total * 0.30)];
+    return {
+      label: app.name,
+      data: monthly.map(v => Math.round(v / 1000)),
+      backgroundColor: MULTI_APP_COLORS[i] + 'bb',
+      borderRadius: 4,
+      borderSkipped: false,
+    };
+  });
+
+  makeChart('c-ov-rev-compare', 'bar', labels3m, revDatasets, {
+    plugins: {
+      legend: { display: true, position: 'bottom', labels: { font: { family: 'DM Mono', size: 9 }, color: '#9ca3af', boxWidth: 10, padding: 12 } },
+      tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtMoney(ctx.parsed.y * 1000) } }
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { family: 'DM Mono', size: 9 }, color: '#9ca3af' } },
+      y: { grid: { color: '#f3f4f6' }, ticks: { callback: v => fmtMoney(v * 1000), font: { family: 'DM Mono', size: 9 }, color: '#9ca3af' }, beginAtZero: true }
+    }
+  });
+
+  // Creative Volume Trend — multi-line
+  const trendDatasets = allApps.slice(0, 6).map((app, i) => {
+    const d = app.d;
+    return {
+      label: app.name,
+      data: d.weeklyCreatives || [],
+      borderColor: MULTI_APP_COLORS[i],
+      backgroundColor: 'transparent',
+      tension: 0.35,
+      pointRadius: 3,
+      pointBackgroundColor: MULTI_APP_COLORS[i],
+      borderWidth: 2,
+    };
+  });
+
+  const trendLabels = allApps[0]?.d?.weekLabels || [];
+  makeChart('c-ov-creative-trend', 'line', trendLabels, trendDatasets, {
+    plugins: {
+      legend: { display: true, position: 'bottom', labels: { font: { family: 'DM Mono', size: 9 }, color: '#9ca3af', boxWidth: 10, padding: 12 } },
+      tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y + ' creatives' } }
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { family: 'DM Mono', size: 8 }, color: '#9ca3af', maxRotation: 45 } },
+      y: { grid: { color: '#f3f4f6' }, ticks: { font: { family: 'DM Mono', size: 9 }, color: '#9ca3af' }, beginAtZero: true }
+    }
+  });
+
+  // Market Intelligence table
+  updateMarketIntel(allApps);
+}
+
+function splitWeeklyToMonthly(weekly, months) {
+  const perMonth = Math.ceil(weekly.length / months);
+  const result = [];
+  for (let i = 0; i < months; i++) {
+    const slice = weekly.slice(i * perMonth, (i + 1) * perMonth);
+    result.push(slice.reduce((s, v) => s + v * 1000, 0));
+  }
+  return result;
+}
+
+function updateOverviewCharts() {
+  initOverviewCharts();
+}
+
+function toggleChartType(chartId, newType, btn) {
+  const chart = chartInstances[chartId];
+  if (!chart) return;
+
+  // Update button styles
+  const wrap = btn.parentElement;
+  wrap.querySelectorAll('.ct-btn').forEach(b => {
+    b.style.background = '#fff';
+    b.style.color = 'var(--t2)';
+    b.style.fontWeight = '400';
+    b.classList.remove('ct-active');
+  });
+  btn.style.background = '#4d65ff';
+  btn.style.color = '#fff';
+  btn.style.fontWeight = '500';
+  btn.classList.add('ct-active');
+
+  // Update chart type
+  chart.config.type = newType;
+  chart.data.datasets.forEach((ds, i) => {
+    const baseColor = MULTI_APP_COLORS[i] || '#4d65ff';
+    if (newType === 'line') {
+      ds.borderColor = baseColor;
+      ds.backgroundColor = 'transparent';
+      ds.tension = 0.35;
+      ds.pointRadius = 3;
+      ds.pointBackgroundColor = baseColor;
+      ds.borderWidth = 2;
+      delete ds.borderRadius;
+      delete ds.borderSkipped;
+    } else {
+      ds.backgroundColor = baseColor + 'bb';
+      ds.borderColor = undefined;
+      ds.borderRadius = 4;
+      ds.borderSkipped = false;
+      ds.tension = undefined;
+      ds.pointRadius = undefined;
+      ds.pointBackgroundColor = undefined;
+      ds.borderWidth = undefined;
+    }
+  });
+  chart.update();
+}
+
+function updateMarketIntel(allApps) {
+  const tbody = document.getElementById('mi-tbody');
+  if (!tbody || !allApps || allApps.length === 0) return;
+
+  // Set headers
+  allApps.slice(0, 3).forEach((app, i) => {
+    const h = document.getElementById('mi-head-app' + (i + 1));
+    if (h) h.innerHTML = '<span class="cmp-app-name">' + app.name + '</span>';
+  });
+
+  // Gather all unique countries across apps
+  const countryMap = {};
+  allApps.slice(0, 3).forEach((app, appIdx) => {
+    const tc = app.d?.topCountries || [];
+    tc.forEach(c => {
+      if (!countryMap[c.code]) countryMap[c.code] = {};
+      countryMap[c.code][appIdx] = c.dl;
+    });
+  });
+
+  // Sort by total downloads across all apps
+  const sorted = Object.entries(countryMap)
+    .map(([code, vals]) => ({ code, vals, total: Object.values(vals).reduce((a, b) => a + b, 0) }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 8);
+
+  if (sorted.length === 0) {
+    tbody.innerHTML = '<tr><td class="cmp-metric-label" colspan="4" style="text-align:center;color:var(--t3);">No market data available</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = sorted.map(row => {
+    const vals = [0, 1, 2].map(i => row.vals[i] || 0);
+    const maxVal = Math.max(...vals);
+    return '<tr>' +
+      '<td class="cmp-metric-label">' + row.code + '</td>' +
+      vals.map((v, i) => {
+        const isMax = v === maxVal && v > 0 && vals.filter(x => x === maxVal).length === 1;
+        const cls = i === 0 ? 'cmp-active-val' : 'cmp-val';
+        return '<td class="' + cls + '">' + fmtNum(v) + (isMax ? ' <span class="cmp-winner-badge">★</span>' : '') + '</td>';
+      }).join('') +
+      '</tr>';
+  }).join('');
+
+  // Insight pills
+  const pillsEl = document.getElementById('mi-pills');
+  if (pillsEl && allApps.length >= 2) {
+    const a1 = allApps[0], a2 = allApps[1];
+    const a1Markets = (a1.d?.topCountries || []).length;
+    const a2Markets = (a2.d?.topCountries || []).length;
+    const pills = [];
+    if (a1Markets !== a2Markets) {
+      pills.push({ cls: 'info', text: a1.name + ': ' + a1Markets + ' markets vs ' + a2.name + ': ' + a2Markets + ' markets' });
+    }
+    const a1Top = a1.d?.topCountries?.[0];
+    const a2Top = a2.d?.topCountries?.[0];
+    if (a1Top && a2Top && a1Top.code !== a2Top.code) {
+      pills.push({ cls: 'warn', text: 'Different top markets: ' + a1.name + ' → ' + a1Top.code + ', ' + a2.name + ' → ' + a2Top.code });
+    }
+    pillsEl.innerHTML = pills.map(p => '<div class="ip ' + p.cls + '"><span class="ip-dot"></span>' + p.text + '</div>').join('');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// BUILD 12: NETWORK & TRENDS — CREATIVE TRENDS + NETWORK TABLE
+// ══════════════════════════════════════════════════════════════
+
+function updateF2Charts() {
+  if (!f2ChartInited) initF2Chart();
+}
+
+function renderF2CreativeTrends(d) {
+  if (!d) return;
+
+  // Hook bars
+  const hookBars = document.getElementById('f2-hook-bars');
+  if (hookBars) {
+    const hooks = [
+      { name: 'Social Proof', pct: 35, color: '#10b981' },
+      { name: 'Gameplay Demo', pct: 28, color: '#3b82f6' },
+      { name: 'FOMO / Urgency', pct: 15, color: '#f59e0b' },
+      { name: 'Challenge', pct: 12, color: '#8b5cf6' },
+      { name: 'Reward Reveal', pct: 10, color: '#ec4899' },
+    ];
+    hookBars.innerHTML = hooks.map(h =>
+      `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="width:90px;font-family:var(--fm);font-size:10px;color:var(--t2);flex-shrink:0;">${h.name}</div>
+        <div style="flex:1;height:18px;background:var(--page);border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${h.pct}%;background:${h.color};border-radius:3px;transition:width 0.5s;"></div>
+        </div>
+        <div style="width:32px;font-family:var(--fd);font-size:10px;font-weight:600;color:var(--t1);text-align:right;">${h.pct}%</div>
+      </div>`
+    ).join('');
+  }
+
+  // Format bars
+  const formatBars = document.getElementById('f2-format-bars');
+  if (formatBars && d.vbuckets) {
+    const total = d.totalCreatives || 1;
+    const videoCount = total - (d.imageCount || 0);
+    const formats = [
+      { name: 'Video', count: videoCount, pct: Math.round(videoCount / total * 100), color: '#4d65ff' },
+      { name: 'Image', count: d.imageCount || 0, pct: Math.round((d.imageCount || 0) / total * 100), color: '#10b981' },
+    ];
+    formatBars.innerHTML = formats.map(f =>
+      `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="width:60px;font-family:var(--fm);font-size:10px;color:var(--t2);flex-shrink:0;">${f.name}</div>
+        <div style="flex:1;height:18px;background:var(--page);border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${f.pct}%;background:${f.color};border-radius:3px;transition:width 0.5s;"></div>
+        </div>
+        <div style="width:60px;font-family:var(--fd);font-size:10px;font-weight:500;color:var(--t1);text-align:right;">${f.count} (${f.pct}%)</div>
+      </div>`
+    ).join('');
+  }
+
+  // Stage bars
+  const stageBars = document.getElementById('f2-stage-bars');
+  if (stageBars && d.stages) {
+    const total = d.totalCreatives || 1;
+    const stageData = [
+      { name: 'Active', count: d.stages.Launch + d.stages.Testing, color: '#10b981' },
+      { name: 'Testing', count: d.stages.Testing, color: '#3b82f6' },
+      { name: 'Scaling', count: d.stages.Scaling, color: '#4d65ff' },
+      { name: 'Decay', count: d.stages.Decay, color: '#ef4444' },
+    ];
+    stageBars.innerHTML = stageData.map(s =>
+      `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="width:60px;font-family:var(--fm);font-size:10px;color:var(--t2);flex-shrink:0;">${s.name}</div>
+        <div style="flex:1;height:18px;background:var(--page);border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${Math.round(s.count / total * 100)}%;background:${s.color};border-radius:3px;transition:width 0.5s;"></div>
+        </div>
+        <div style="width:60px;font-family:var(--fd);font-size:10px;font-weight:500;color:var(--t1);text-align:right;">${s.count} (${Math.round(s.count / total * 100)}%)</div>
+      </div>`
+    ).join('');
+  }
+
+  // Hook sparklines (mini bar trends)
+  const sparkEl = document.getElementById('f2-hook-sparklines');
+  if (sparkEl) {
+    const hookTrends = [
+      { name: 'Social Proof', values: [32, 35, 38, 40, 42, 45, 48, 50], delta: '+18%' },
+      { name: 'Gameplay', values: [30, 28, 25, 22, 20, 18, 16, 15], delta: '-15%' },
+      { name: 'FOMO', values: [15, 14, 13, 12, 12, 11, 10, 10], delta: '-5%' },
+      { name: 'Challenge', values: [10, 11, 12, 13, 14, 15, 16, 15], delta: '+5%' },
+      { name: 'Reward', values: [8, 8, 7, 7, 6, 6, 5, 5], delta: '-3%' },
+    ];
+    sparkEl.innerHTML = hookTrends.map(h => {
+      const max = Math.max(...h.values);
+      const bars = h.values.map(v =>
+        `<div style="width:8px;height:${Math.round(v / max * 24)}px;background:${h.delta.startsWith('+') ? 'var(--accent)' : 'var(--coral)'};border-radius:2px;"></div>`
+      ).join('');
+      const isUp = h.delta.startsWith('+');
+      return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <div style="width:80px;font-family:var(--fm);font-size:10px;color:var(--t2);flex-shrink:0;">${h.name}</div>
+        <div style="display:flex;align-items:flex-end;gap:2px;height:24px;">${bars}</div>
+        <div style="font-family:var(--fd);font-size:10px;font-weight:600;color:${isUp ? 'var(--green)' : 'var(--coral)'};">${h.delta}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Network pills
+  const netPills = document.getElementById('f2-network-pills');
+  if (netPills && d.channelHeatmap) {
+    const ch = d.channelHeatmap.channels || [];
+    const total = ch.reduce((s, c) => s + c.total, 0);
+    const topCh = ch[0];
+    const pills = [];
+    if (topCh && total > 0) {
+      const share = Math.round(topCh.total / total * 100);
+      if (share > 50) pills.push({ cls: 'warn', text: topCh.name + ' dominates at ' + share + '% — concentration risk' });
+      else pills.push({ cls: 'good', text: 'Diversified: top channel ' + topCh.name + ' at ' + share + '%' });
+    }
+    if (ch.length <= 2) pills.push({ cls: 'alert', text: 'Only ' + ch.length + ' networks — expand to reduce risk' });
+    netPills.innerHTML = pills.map(p => '<div class="ip ' + p.cls + '"><span class="ip-dot"></span>' + p.text + '</div>').join('');
+  }
+
+  // Render Ad Networks tab insights (Sections 1-3)
+  renderF2NetworkInsights(d);
+}
+
+const CHANNEL_COLORS = ['#1d4ed8', '#3b82f6', '#60a5fa', '#93c5fd', '#dbeafe'];
+
+function renderF2NetworkInsights(d) {
+  if (!d || !d.channelHeatmap) return;
+  const channels = d.channelHeatmap.channels || [];
+  const months = d.channelHeatmap.months || [];
+  const grandTotal = channels.reduce((s, ch) => s + (ch.total || 0), 0);
+  if (!channels.length) return;
+
+  // Compute per-channel MoM
+  channels.forEach(ch => {
+    const last = ch.values[ch.values.length - 1] || 0;
+    const prev = ch.values.length >= 2 ? ch.values[ch.values.length - 2] : last;
+    ch._momPct = prev > 0 ? Math.round((last - prev) / prev * 100) : 0;
+  });
+
+  // Monthly totals
+  const monthTotals = months.map((_, i) => channels.reduce((s, ch) => s + (ch.values[i] || 0), 0));
+  const totalMoM = monthTotals.length >= 2 && monthTotals[monthTotals.length - 2] > 0
+    ? Math.round((monthTotals[monthTotals.length - 1] - monthTotals[monthTotals.length - 2]) / monthTotals[monthTotals.length - 2] * 100)
+    : 0;
+
+  // ── SECTION 1: Network Health Summary ──
+  const netCount = d.networkCount || channels.length;
+  const hhi = d.hhi || 0;
+  const stability = d.stability || 0;
+
+  const kpiNet = document.getElementById('f2-kpi-networks');
+  if (kpiNet) {
+    const bg = netCount >= 3 ? '#ecfdf5' : netCount === 2 ? '#fef3c7' : '#fef2f2';
+    const clr = netCount >= 3 ? '#065f46' : netCount === 2 ? '#92400e' : '#991b1b';
+    const lbl = netCount >= 3 ? 'Diversified' : netCount === 2 ? 'Limited' : 'Single-channel risk';
+    kpiNet.style.background = bg;
+    kpiNet.innerHTML = '<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:' + clr + ';font-weight:600;">Active Networks</div>' +
+      '<div style="font-size:22px;font-weight:700;color:' + clr + ';margin:4px 0;">' + netCount + '</div>' +
+      '<div style="font-size:10px;color:' + clr + ';">' + lbl + '</div>' +
+      '<div style="font-size:9px;color:var(--t3);margin-top:2px;">' + (d.networkNames || '') + '</div>';
+  }
+
+  const kpiHhi = document.getElementById('f2-kpi-hhi');
+  if (kpiHhi) {
+    const bg = hhi > 0.5 ? '#fef2f2' : hhi > 0.25 ? '#fef3c7' : '#ecfdf5';
+    const clr = hhi > 0.5 ? '#991b1b' : hhi > 0.25 ? '#92400e' : '#065f46';
+    const lbl = hhi > 0.5 ? 'Highly concentrated' : hhi > 0.25 ? 'Moderately concentrated' : 'Well spread';
+    kpiHhi.style.background = bg;
+    kpiHhi.innerHTML = '<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:' + clr + ';font-weight:600;">Concentration (HHI)</div>' +
+      '<div style="font-size:22px;font-weight:700;color:' + clr + ';margin:4px 0;">' + hhi.toFixed(2) + '</div>' +
+      '<div style="font-size:10px;color:' + clr + ';">' + lbl + '</div>' +
+      '<div style="font-size:9px;color:var(--t3);margin-top:2px;">Top channel holds ' + (d.topChannel ? d.topChannel.pct : '—') + '%</div>';
+  }
+
+  const kpiStab = document.getElementById('f2-kpi-stability');
+  if (kpiStab) {
+    const bg = stability < 50 ? '#fef2f2' : stability < 70 ? '#fef3c7' : '#ecfdf5';
+    const clr = stability < 50 ? '#991b1b' : stability < 70 ? '#92400e' : '#065f46';
+    const lbl = stability < 50 ? 'Low diversity' : stability < 70 ? 'Moderate' : 'Strong diversity';
+    kpiStab.style.background = bg;
+    kpiStab.innerHTML = '<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:' + clr + ';font-weight:600;">Stability Score</div>' +
+      '<div style="font-size:22px;font-weight:700;color:' + clr + ';margin:4px 0;">' + Math.round(stability) + '<span style="font-size:13px;font-weight:500;color:var(--t3);"> /100</span></div>' +
+      '<div style="font-size:10px;color:' + clr + ';">' + lbl + '</div>';
+  }
+
+  // Summary pills
+  const sumPills = document.getElementById('f2-summary-pills');
+  if (sumPills) {
+    const pills = [];
+    if (d.topChannel && d.topChannel.pct > 60) pills.push({ cls: 'alert', text: d.topChannel.name + ' holds ' + d.topChannel.pct + '% — high dependency risk' });
+    if (netCount <= 2) pills.push({ cls: 'warn', text: 'Only ' + netCount + ' network' + (netCount > 1 ? 's' : '') + ' active — expand to reduce risk' });
+    if (totalMoM > 0) pills.push({ cls: 'good', text: 'Total impressions growing +' + totalMoM + '% MoM' });
+    else if (totalMoM < 0) pills.push({ cls: 'alert', text: 'Total impressions declining ' + totalMoM + '% MoM' });
+    const growing = channels.filter(ch => ch._momPct > 20);
+    growing.forEach(ch => pills.push({ cls: 'info', text: ch.name + ' surging +' + ch._momPct + '% MoM' }));
+    sumPills.innerHTML = pills.map(p => '<div class="ip ' + p.cls + '"><span class="ip-dot"></span>' + p.text + '</div>').join('');
+  }
+
+  // ── SECTION 2: Channel Mix — Doughnut + Breakdown ──
+  const mixColors = channels.map((_, i) => CHANNEL_COLORS[i % CHANNEL_COLORS.length]);
+  makeChart('c-f2-channel-mix', 'doughnut', channels.map(ch => ch.name), [{
+    data: channels.map(ch => ch.total),
+    backgroundColor: mixColors,
+    borderWidth: 0,
+  }], {
+    cutout: '65%',
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: function(ctx) { return ctx.label + ': ' + fmtNum(ctx.parsed) + ' (' + Math.round(ctx.parsed / grandTotal * 100) + '%)'; } } },
+    },
+    scales: {}
+  });
+
+  // Breakdown list
+  const brkdown = document.getElementById('f2-mix-breakdown');
+  if (brkdown) {
+    brkdown.innerHTML = channels.map((ch, i) => {
+      const share = grandTotal > 0 ? Math.round(ch.total / grandTotal * 100) : 0;
+      const arrow = ch._momPct >= 0 ? '↑' : '↓';
+      const arrowClr = ch._momPct >= 0 ? 'var(--green)' : 'var(--red)';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f3f4f6;">' +
+        '<div style="width:10px;height:10px;border-radius:50%;background:' + mixColors[i] + ';flex-shrink:0;"></div>' +
+        '<div style="flex:1;font-size:12px;color:var(--t1);">' + ch.name + '</div>' +
+        '<div style="font-size:13px;font-weight:700;color:var(--t0);">' + share + '%</div>' +
+        '<div style="font-size:10px;color:' + arrowClr + ';min-width:40px;text-align:right;">' + arrow + ' ' + Math.abs(ch._momPct) + '%</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  // Mix pills
+  const mixPills = document.getElementById('f2-mix-pills');
+  if (mixPills) {
+    const pills = [];
+    const sorted = [...channels].sort((a, b) => b.total - a.total);
+    if (sorted.length >= 2) {
+      const top2pct = Math.round((sorted[0].total + sorted[1].total) / grandTotal * 100);
+      if (top2pct > 80) pills.push({ cls: 'warn', text: 'Top 2 networks = ' + top2pct + '% — reduce concentration' });
+    }
+    const fastest = [...channels].sort((a, b) => b._momPct - a._momPct);
+    if (fastest.length && fastest[0]._momPct > 5) pills.push({ cls: 'good', text: fastest[0].name + ' surging +' + fastest[0]._momPct + '% MoM' });
+    const slowest = [...channels].sort((a, b) => a._momPct - b._momPct);
+    if (slowest.length && slowest[0]._momPct < -10) pills.push({ cls: 'alert', text: slowest[0].name + ' declining ' + slowest[0]._momPct + '% MoM — investigate' });
+    mixPills.innerHTML = pills.map(p => '<div class="ip ' + p.cls + '"><span class="ip-dot"></span>' + p.text + '</div>').join('');
+  }
+
+  // ── SECTION 3: Monthly Impression Trend — Stacked Bar ──
+  const trendDatasets = channels.map((ch, i) => ({
+    label: ch.name,
+    data: ch.values,
+    backgroundColor: CHANNEL_COLORS[i % CHANNEL_COLORS.length],
+    borderRadius: 2,
+    borderSkipped: false,
+  }));
+
+  makeChart('c-f2-monthly-trend', 'bar', months, trendDatasets, {
+    plugins: {
+      legend: { display: true, position: 'bottom', labels: { font: { family: 'DM Mono', size: 9 }, color: '#9ca3af', boxWidth: 10, padding: 12 } },
+      tooltip: { callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + fmtNum(ctx.parsed.y); } } }
+    },
+    scales: {
+      x: { stacked: true, grid: { display: false }, ticks: { font: { family: 'DM Mono', size: 9 }, color: '#9ca3af' } },
+      y: { stacked: true, grid: { color: '#f3f4f6' }, ticks: { callback: function(v) { return fmtNum(v); }, font: { family: 'DM Mono', size: 9 }, color: '#9ca3af' }, beginAtZero: true }
+    }
+  });
+
+  // Trend pills
+  const trendPills = document.getElementById('f2-trend-pills');
+  if (trendPills) {
+    const pills = [];
+    if (totalMoM >= 0) pills.push({ cls: 'good', text: 'Total impressions +' + totalMoM + '% MoM (' + fmtNum(monthTotals[monthTotals.length - 1]) + ' vs ' + fmtNum(monthTotals[monthTotals.length - 2] || 0) + ')' });
+    else pills.push({ cls: 'alert', text: 'Total impressions ' + totalMoM + '% MoM (' + fmtNum(monthTotals[monthTotals.length - 1]) + ' vs ' + fmtNum(monthTotals[monthTotals.length - 2] || 0) + ')' });
+    const allDeclining = channels.every(ch => ch._momPct < 0);
+    if (allDeclining) pills.push({ cls: 'alert', text: 'All ' + channels.length + ' networks declining — market pullback or budget cut?' });
+    trendPills.innerHTML = pills.map(p => '<div class="ip ' + p.cls + '"><span class="ip-dot"></span>' + p.text + '</div>').join('');
+  }
+}
+
+// Toggle stacked/grouped for monthly trend chart
+function toggleF2TrendStack(mode, btn) {
+  const chart = chartInstances['c-f2-monthly-trend'];
+  if (!chart) return;
+  const wrap = btn.parentElement;
+  wrap.querySelectorAll('.ct-btn').forEach(b => {
+    b.style.background = '#fff'; b.style.color = 'var(--t2)'; b.style.fontWeight = '400';
+  });
+  btn.style.background = '#4d65ff'; btn.style.color = '#fff'; btn.style.fontWeight = '500';
+  const stacked = mode === 'stacked';
+  chart.options.scales.x.stacked = stacked;
+  chart.options.scales.y.stacked = stacked;
+  chart.update();
+}
+
+// ══════════════════════════════════════════════════════════════
+// BUILD 13: PLAYBOOK — PERFORMANCE SNAPSHOT + DYNAMIC PATTERNS
+// ══════════════════════════════════════════════════════════════
+
+function updatePlaybook(d) {
+  if (!d) return;
+  const s = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+
+  s('pb-dl-val', d.dlTotalFmt || fmtNum(d.dlTotal));
+  s('pb-dl-sub', d.dlTrend ? d.dlTrend + ' MoM' : '—');
+  s('pb-chi-val', 'CHI ' + Math.round(d.chi || 0));
+  const decayPct = d.totalCreatives ? Math.round((d.stages?.Decay || 0) / d.totalCreatives * 100) : 0;
+  s('pb-chi-sub', decayPct + '% decay rate');
+  s('pb-network-val', (d.networkCount || 1) + ' networks');
+  s('pb-network-sub', d.networkCount <= 1 ? 'Single-channel risk' : 'Diversified');
+  s('pb-market-val', d.topCountries?.length ? d.topCountries[0].code : '—');
+
+  if (d.countryRev && d.countryDl) {
+    const topCode = d.topCountries?.[0]?.code;
+    const rev = d.countryRev[topCode] || 0;
+    const dl = d.countryDl[topCode] || 1;
+    s('pb-market-sub', 'RPD $' + (rev / dl).toFixed(2));
+  }
+
+  const headerTitle = document.getElementById('pb-header-title');
+  if (headerTitle) headerTitle.textContent = 'Pattern analysis — ' + (d.appName || 'Unknown');
+  const headerSub = document.getElementById('pb-header-sub');
+  if (headerSub) headerSub.textContent = 'Derived from ' + (d.period || 'latest data') + ' · auto-detected';
+
+  renderPlaybookActions(d);
+  renderPlaybookPatterns(d);
+}
+
+function renderPlaybookActions(d) {
+  const thisWeek = document.getElementById('pb-aq-this-week');
+  const next2w = document.getElementById('pb-aq-next-2w');
+  const monitor = document.getElementById('pb-aq-monitor');
+  const aqItem = (action, outcome) =>
+    `<div class="aq-item"><span class="aq-action">${action}</span><span class="aq-outcome">${outcome}</span></div>`;
+
+  if (thisWeek) {
+    const items = [];
+    if (d.stages?.Decay > (d.totalCreatives || 0) * 0.3)
+      items.push(aqItem('Audit creatives >120 days in decay stage', '→ ' + d.stages.Decay + ' creatives need review'));
+    if (d.dlTrendDir === 'down')
+      items.push(aqItem('Review DL decline — check creative quality & audience saturation', '→ ' + d.dlTrend));
+    if (d.chi < 50)
+      items.push(aqItem('Urgently improve creative pipeline — CHI critically low', '→ CHI ' + Math.round(d.chi)));
+    thisWeek.innerHTML = items.length > 0 ? items.join('') : aqItem('No urgent actions', '✓ Pipeline healthy');
+  }
+  if (next2w) {
+    const items = [];
+    if (d.networkCount <= 1)
+      items.push(aqItem('Test ads on TikTok or Google UAC', '→ Currently single-channel'));
+    items.push(aqItem('Optimize creative volume vs quality ratio', '→ ' + (d.avgWk || 0).toFixed(1) + '/wk refresh'));
+    next2w.innerHTML = items.join('');
+  }
+  if (monitor) {
+    monitor.innerHTML = [
+      aqItem('Track weekly download trend', '→ ' + (d.dlTrendSub || '—')),
+      aqItem('Monitor organic vs paid ratio', '→ ' + (d.topChannel ? d.topChannel.name + ' ' + d.topChannel.pct + '%' : '—')),
+    ].join('');
+  }
+}
+
+function renderPlaybookPatterns(d) {
+  const container = document.getElementById('pb-pattern-cards');
+  if (!container || !d) return;
+  const patterns = [];
+
+  if (d.stages?.Decay > (d.totalCreatives || 0) * 0.3) {
+    const dp = Math.round(d.stages.Decay / (d.totalCreatives || 1) * 100);
+    patterns.push({ name: 'Creative fatigue: ' + d.stages.Decay + ' creatives (' + dp + '%) in decay', genre: 'All networks · ' + (d.period || ''), severity: 'high',
+      metrics: [{ label: 'Decay count', val: d.stages.Decay }, { label: 'Decay %', val: dp + '%', cls: 'outcome-bad' }, { label: 'Active rate', val: Math.round(d.activeRate || 0) + '%' }, { label: 'Risk', val: 'Frequency fatigue', cls: 'outcome-bad' }],
+      desc: d.stages.Decay + ' creatives beyond effective lifecycle — frequency fatigue and wasted spend.',
+      actions: ['Pause creatives >120 days', 'Set stricter frequency caps: max 3-4×/user/30d', 'Rotate with fresh variants of proven concepts'] });
+  }
+  if (d.dlTrendDir === 'down' && d.avgWk > 10) {
+    patterns.push({ name: 'High volume not driving download growth', genre: (d.period || '') + ' · ' + Math.round(d.avgWk) + '/wk · Downloads declining', severity: 'high',
+      metrics: [{ label: 'Volume', val: d.avgWk.toFixed(1) + '/wk' }, { label: 'Median', val: '3/wk' }, { label: 'DL trend', val: d.dlTrend, cls: 'outcome-bad' }, { label: 'Pattern', val: 'Test broad, no scale' }],
+      desc: 'Volume ' + (d.avgWk / 3).toFixed(1) + '× median but downloads declining. Volume alone not creating winners.',
+      actions: ['Reduce to 6-8/wk, increase budget per creative', 'Set thresholds: X downloads in 7d before scale/kill', 'Test in batches: 3 hooks × 2 formats'] });
+  }
+  if (d.networkCount <= 1) {
+    patterns.push({ name: 'Single network dependency', genre: (d.networkNames || 'Meta only') + ' · ' + (d.period || ''), severity: 'medium',
+      metrics: [{ label: 'Networks', val: d.networkCount || 1, cls: 'outcome-bad' }, { label: 'Top channel', val: d.topChannel?.name || '—' }, { label: 'Risk', val: 'CPM exposure' }, { label: 'Opportunity', val: 'TikTok, Google', cls: 'outcome-good' }],
+      desc: 'All creatives on single ecosystem. No fallback if CPMs increase.',
+      actions: ['Test TikTok with 5-10 creatives', 'Test Google UAC for high-RPD markets', 'Target 20% non-primary spend in 2 months'] });
+  }
+  if (d.countryRev && d.countryDl && d.topCountries?.length >= 2) {
+    const c1 = d.topCountries[0].code, c2 = d.topCountries[1].code;
+    const rpd1 = (d.countryRev[c1] || 0) / (d.countryDl[c1] || 1);
+    const rpd2 = (d.countryRev[c2] || 0) / (d.countryDl[c2] || 1);
+    const gap = Math.max(rpd1, rpd2) / Math.max(Math.min(rpd1, rpd2), 0.01);
+    if (gap > 3) {
+      const hi = rpd1 > rpd2 ? c1 : c2, lo = rpd1 > rpd2 ? c2 : c1;
+      patterns.push({ name: hi + ' vs ' + lo + ' RPD gap: ' + Math.round(gap) + '×', genre: 'RPD analysis · ' + (d.period || ''), severity: 'medium',
+        metrics: [{ label: lo + ' DLs', val: fmtNum(d.countryDl[lo]) }, { label: lo + ' RPD', val: '$' + Math.min(rpd1, rpd2).toFixed(2) }, { label: hi + ' DLs', val: fmtNum(d.countryDl[hi]) }, { label: hi + ' RPD', val: '$' + Math.max(rpd1, rpd2).toFixed(2), cls: 'outcome-good' }],
+        desc: 'RPD ' + Math.round(gap) + '× higher in ' + hi + '. Same creative strategy for both markets misses revenue opportunity.',
+        actions: ['Separate budget for ' + hi + ' (monetization) vs ' + lo + ' (retention)', 'Test ' + hi + '-specific creatives: localized copy', 'Review spend allocation'] });
+    }
+  }
+  if (patterns.length === 0) {
+    patterns.push({ name: 'No critical patterns detected', genre: 'All metrics healthy', severity: 'info',
+      metrics: [{ label: 'CHI', val: Math.round(d.chi || 0) }, { label: 'CREI', val: Math.round(d.crei || 0) }, { label: 'Status', val: 'Healthy', cls: 'outcome-good' }],
+      desc: 'Creative pipeline operating normally. Continue monitoring.', actions: ['Maintain current cadence', 'Review weekly'] });
+  }
+
+  const icons = {
+    high: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    medium: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    info: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
+  };
+  const colors = { high: 'var(--coral)', medium: 'var(--amber)', info: 'var(--accent)' };
+
+  container.innerHTML = patterns.map(p => `
+    <div class="pb-card">
+      <div class="pb-head">
+        <div><div class="pb-name">${p.name}</div><div class="pb-genre">${p.genre}</div></div>
+        <div class="conf-ring" style="border-color:${colors[p.severity]};color:${colors[p.severity]};">${icons[p.severity] || ''}</div>
+      </div>
+      <div class="pb-meta">${p.metrics.map(m => `<div class="pbm"><div class="pbm-label">${m.label}</div><div class="pbm-val ${m.cls || ''}">${m.val}</div></div>`).join('')}</div>
+      <div class="pb-desc">${p.desc}</div>
+      <div class="pb-tests-label">Recommended actions</div>
+      ${p.actions.map(a => `<div class="pb-test">${a}</div>`).join('')}
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+// BUILD 14: SETTINGS TAB — WATCHLIST MANAGEMENT + API USAGE
+// ══════════════════════════════════════════════════════════════
+
+function updateSettingsTab() {
+  const apps = window.watchlistApps || [];
+  const container = document.getElementById('settings-watchlist');
+  const countEl = document.getElementById('settings-app-count');
+  if (countEl) countEl.textContent = apps.length;
+  if (!container) return;
+
+  if (apps.length === 0) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;font-family:var(--fm);font-size:11px;color:var(--t3);">No apps in watchlist. Use the search bar to add apps.</div>';
+    return;
+  }
+
+  container.innerHTML = apps.map((app, i) => {
+    const color = app.color || CHIP_COLORS[i % CHIP_COLORS.length];
+    const synced = app.last_synced_at ? new Date(app.last_synced_at).toLocaleDateString() : 'Never';
+    const dl = app.latest_snapshot?.downloads ? fmtNum(app.latest_snapshot.downloads) : '—';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);">
+      <div style="width:32px;height:32px;border-radius:8px;background:${color};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0;">${(app.app_name || '?')[0]}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:var(--fd);font-size:12px;font-weight:600;color:var(--t0);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${app.app_name}</div>
+        <div style="font-family:var(--fm);font-size:9px;color:var(--t3);">Last sync: ${synced} · ${dl} DLs · ${app.platform || '—'}</div>
+      </div>
+      <span style="font-family:var(--fm);font-size:8px;padding:2px 6px;border-radius:3px;background:rgba(77,101,255,0.1);color:var(--accent);font-weight:600;">API</span>
+      <button class="card-btn" style="font-size:10px;padding:3px 8px;" onclick="handleSyncSingle('${app.id}')">Refresh</button>
+      <button class="card-btn" style="font-size:10px;padding:3px 8px;color:var(--coral);border-color:rgba(239,68,68,0.3);" onclick="handleRemoveApp('${app.id}','${(app.app_name || '').replace(/'/g, '\\&#39;')}')">Remove</button>
+    </div>`;
+  }).join('');
+}
+
+async function handleSyncSingle(appId) {
+  try {
+    await window.api.syncApp(appId);
+    await loadWatchlist();
+    if (window.activeAppId === appId) selectAppById(appId);
+    updateSettingsTab();
+  } catch (err) { console.error('Sync failed:', err); }
+}
+
+async function handleRemoveApp(appId, appName) {
+  if (!confirm('Remove "' + appName + '" from watchlist? All data will be deleted.')) return;
+  try {
+    await window.api.removeFromWatchlist(appId);
+    await loadWatchlist();
+    updateSettingsTab();
+    if (window.activeAppId === appId) {
+      window.activeAppId = null;
+      if (window.watchlistApps.length > 0) selectAppById(window.watchlistApps[0].id);
+    }
+  } catch (err) { alert('Failed to remove: ' + err.message); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// BUILD 17: POLISH — LOADING STATES + SKELETON SHIMMER
+// ══════════════════════════════════════════════════════════════
+
+function showSkeletonStates() {
+  ['v-chi', 'v-crei', 'v-imp', 'v-rev', 'v-rank', 'v-sent',
+   'ov-total-dl', 'ov-total-rev', 'ov-active-creatives', 'ov-avg-wk'
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.textContent === '—') el.classList.add('skeleton-text');
+  });
+}
+
+function removeSkeletonStates() {
+  document.querySelectorAll('.skeleton-text').forEach(el => el.classList.remove('skeleton-text'));
+}
+
+// ── INIT: load from API first, fallback to demo data ──
+(function initApp() {
   initCharts();
   initF2Chart();
-  updateAllUI(compDataFull['Conquian Zingplay']);
+  setTimeout(initOverviewCharts, 100);
+
+  // Try to load from API
+  if (window.api) {
+    loadWatchlist().then(() => {
+      // If no apps in watchlist, show demo data
+      if (window.watchlistApps.length === 0) {
+        console.log('No watchlist apps — showing demo data');
+        updateAllUI(compDataFull['Conquian Zingplay']);
+      }
+    }).catch(() => {
+      // API unavailable — fallback to demo
+      console.warn('API unavailable — using demo data');
+      updateAllUI(compDataFull['Conquian Zingplay']);
+    });
+  } else {
+    // No API client — pure demo mode
+    updateAllUI(compDataFull['Conquian Zingplay']);
+  }
+
   restoreAqState();
 
   // Sort dropdown → re-render creative grid

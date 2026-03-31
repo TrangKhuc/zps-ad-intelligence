@@ -1,6 +1,6 @@
 # ZPS Ad Intelligence — Project Structure & Plan
 
-> **Last updated:** 2026-03-26 — full codebase review + revised plan
+> **Last updated:** 2026-03-27 — Phase 2 architecture: API + Supabase
 > **Repo:** [github.com/TrangKhuc/zps-ad-intelligence](https://github.com/TrangKhuc/zps-ad-intelligence)
 > **Run local:** `python3 -m http.server 8080` → [http://localhost:8080](http://localhost:8080)
 > **Vercel:** [zps-ad-intelligence-chi.vercel.app](https://zps-ad-intelligence-chi.vercel.app)
@@ -12,71 +12,110 @@
 ```
 zps-ad-intelligence/
 ├── index.html                     ← Entry point, loads components dynamically
+├── package.json                   ← [NEW] Dependencies (@supabase/supabase-js)
+├── vercel.json                    ← [NEW] API route rewrites
+├── .env.local                     ← [NEW] Secrets — GITIGNORED, never commit
+├── api/                           ← [NEW] Vercel Serverless Functions
+│   ├── search.js                  ← Search apps by name → Sensor Tower API
+│   ├── app-data.js                ← Pull all data for 1 app (downloads + creatives + networks)
+│   ├── app-info.js                ← App metadata (name, icon, category)
+│   ├── watchlist.js               ← CRUD watchlists + apps (Supabase)
+│   └── snapshots.js               ← Save/load weekly data snapshots (Supabase)
 ├── src/
-│   ├── main.js                    ← All JS logic (853 lines)
+│   ├── main.js                    ← Core JS logic (~1470 lines)
+│   │   ├── fmtNum / fmtMoney          — smart K/M/B number formatting
 │   │   ├── switchTab / setNavActive    — tab & sidebar navigation
-│   │   ├── handleFile / parseCSV / readFileText — CSV upload & parsing
+│   │   ├── handleFile / parseCSV       — CSV upload & parsing (fallback)
 │   │   ├── analyzeUploads()            — CHI/CREI computation from CSV
+│   │   ├── updateAllUI(data)           — single function updates 50+ DOM elements
+│   │   ├── updateCompTable(data)       — competitor comparison table with winners
+│   │   ├── renderCreativeGrid(arr)     — dynamic creative card grid
 │   │   ├── initCharts / switchChart    — Chart.js (Format/Stage/Hook/Trend)
 │   │   ├── initF2Chart()              — F2 combo chart (creatives vs DL)
-│   │   ├── selectComp(btn, name)      — competitor switch (compDataReal)
-│   │   ├── filterUpdate()             — ⚠ placeholder (UI only, no logic)
-│   │   ├── labelOneCreative / runAutoLabel — Claude API auto-labeling
-│   │   └── toggleUpload / toggleFormula / toggleBrainstorm / toggleDrop
-│   ├── styles/main.css            ← Full CSS + UI overhaul (806 lines)
-│   │   ├── Design tokens: #5b50e8 accent, Syne/DM Sans/DM Mono fonts
-│   │   ├── SVG icons (Lucide-style), hover lift effects
-│   │   ├── Responsive grid, sticky topbar/sidebar/filter
-│   │   └── Animations: fadein, pulse-dot, blink, barGrow
-│   ├── data/conquian.js           ← Real Sensor Tower data (Jan–Mar 2026)
-│   │   ├── APP_DATA: scores, sub-scores, downloads, revenue, countries
-│   │   ├── FILTER_OPTIONS: 9 filter categories
-│   │   └── FORMULAS: CHI & CREI definitions (Vietnamese)
+│   │   ├── selectComp(btn, name)      — competitor switch → updateAllUI()
+│   │   ├── exportReport()             — 1-click Markdown weekly report
+│   │   ├── [NEW] searchApp(term)      — fetch /api/search
+│   │   ├── [NEW] fetchAppData(id)     — fetch /api/app-data → updateAllUI()
+│   │   ├── [NEW] loadWatchlist()      — fetch /api/watchlist → render chips
+│   │   └── [NEW] saveSnapshot(id,d)   — POST /api/snapshots
+│   ├── styles/main.css            ← Full CSS (~780 lines)
+│   │   ├── Design tokens: #4d65ff accent, Inter font, #f8f9fb bg
+│   │   ├── Responsive: 1280px, 1024px, 768px breakpoints
+│   │   ├── Action queue, export button, skeleton shimmer
+│   │   └── [NEW] App search input, dropdown, watchlist chip styles
+│   ├── data/conquian.js           ← Reference data (not imported at runtime)
 │   └── components/
 │       ├── Topbar.html            ← Logo, breadcrumb, upload button
 │       ├── Sidebar.html           ← Left nav (Overview/F1/F2/F3)
-│       ├── UploadPanel.html       ← 3-slot CSV upload (SVG icons)
-│       ├── CompetitorSelector.html ← Watchlist chips (3 apps)
+│       ├── UploadPanel.html       ← 3-slot CSV upload + "or search app" option
+│       ├── CompetitorSelector.html ← [REDESIGN] Search input + dynamic watchlist chips
 │       ├── IntelRail.html         ← CHI/CREI/DL/Rev always-visible bar
-│       ├── FilterBar.html         ← 9 dropdown filters (UI only)
+│       ├── FilterBar.html         ← Filter dropdowns with checkbox logic
 │       ├── TabNav.html            ← Tab buttons
-│       ├── TabOverview.html       ← Signal banner, KPIs, action queue
-│       ├── TabCreativeProfile.html ← F1: charts, auto-label, grid, brainstorm (30K)
+│       ├── TabOverview.html       ← Comparison table + signal banner + action queue
+│       ├── TabCreativeProfile.html ← F1: charts + scores + creative grid + brainstorm
 │       ├── TabTimerHeatmap.html   ← F2: timeline + combo chart + heatmap
-│       └── TabPlaybook.html       ← F3: pattern cards + data gaps (38K, has script)
+│       └── TabPlaybook.html       ← F3: pattern cards + data gaps
+├── DEV-TRACKER.md                 ← Build history + changelog
 └── project-structure.md           ← This file
+```
+
+### Architecture
+
+```
+                    ┌──────────────────────────┐
+                    │  Sensor Tower API         │
+                    │  api.sensortower.com      │
+                    └──────────┬───────────────┘
+                               │ (auth_token in env var — NEVER in frontend)
+                    ┌──────────▼───────────────┐
+                    │  Vercel Serverless        │
+                    │  /api/search.js           │
+                    │  /api/app-data.js         │
+                    │  /api/watchlist.js         │
+                    │  /api/snapshots.js         │
+                    └──────┬───────┬───────────┘
+                           │       │
+              ┌────────────▼─┐  ┌──▼────────────┐
+              │  Supabase    │  │  Frontend      │
+              │  PostgreSQL  │  │  (HTML/JS/CSS) │
+              │  - watchlists│  │  - updateAllUI │
+              │  - snapshots │  │  - charts      │
+              │  - actions   │  │  - grids       │
+              └──────────────┘  └────────────────┘
 ```
 
 ---
 
-## Current Status (sau UI overhaul merge)
+## Current Status (Build 1–5 complete, Phase 2 planned)
 
-### What's Working
+### What's Working (Build 1–5)
 
 | Component | Status | Details |
 | --- | --- | --- |
 | CSV Upload + Parse | ✅ Done | 3 files → CHI/CREI/charts auto-update |
-| Intel Rail | ✅ Done | 6 KPIs + delta badges + tooltips |
-| Overview Tab | ✅ Done | Signal banner, KPI cards, country breakdown, action queue |
-| F1 Charts | ✅ Done | 4 views (Format/Stage/Hook/Trend) + insight pills |
-| F1 CHI/CREI Formulas | ✅ Done | Expandable panels with sub-scores |
-| F1 Auto-Label | ✅ Done | Claude Haiku API → hook/emotion/mechanic per creative |
-| F2 Combo Chart | ✅ Done | Dual-axis: new creatives vs downloads (11 weeks) |
-| F3 Pattern Cards | ✅ Done | 4 patterns + data gaps card |
-| UI Overhaul | ✅ Done | SVG icons, hover effects, responsive, accessibility |
-| Competitor Switch | ✅ Done | `selectComp()` updates Intel Rail per app |
+| `updateAllUI(data)` | ✅ Done | Single function updates 50+ DOM elements from data object |
+| Intel Rail | ✅ Done | 7 KPIs with `fmtNum()`/`fmtMoney()` formatting |
+| Overview Tab | ✅ Done | Comparison table (★ winners), signal banner, KPIs, action queue |
+| F1 Creative Grid | ✅ Done | Dynamic `renderCreativeGrid()` with sort/filter |
+| F1 Charts + Scores | ✅ Done | 4 chart views + CHI/CREI expandable formulas |
+| F2 Timeline + Heatmap | ✅ Done | Template-rendered from data, Monday-start weeks |
+| F3 Playbook | ✅ Done | Pattern cards from data |
+| Competitor Switch | ✅ Done | 3 apps with full demo data in `compDataFull` |
+| Weekly Workflow | ✅ Done | localStorage delta tracking, action checkboxes, Markdown export |
+| Responsive | ✅ Done | 1280px, 1024px, 768px breakpoints |
+| Deploy | ✅ Done | Vercel production |
 
-### What's Hardcoded / Placeholder
+### What's Next (Phase 2 — API + Database)
 
-| Component | Issue | Impact |
+| Component | Current | Target |
 | --- | --- | --- |
-| **Filter Bar** | `filterUpdate()` chỉ toggle CSS class, không filter data | Filters không hoạt động |
-| **F1 Creative Grid** | 5 cards hardcoded, sort/view toggle không wired | Không render từ CSV |
-| **F1 Brainstorm** | 6 ideas hardcoded, không data-driven | Static content |
-| **F2 Timeline** | HTML hardcoded, không generate từ CSV | Không dynamic |
-| **F2 Heatmap** | HTML cells hardcoded | Không render từ data |
-| **F3 Patterns** | Static text, không auto-detect từ data | Không reactive |
-| **Competitor Data** | `compDataReal` in main.js: chỉ Conquian có số, Poker/Bài Cào = "—" | Demo mode |
+| **Data source** | Manual CSV upload (3 files) | Sensor Tower API (auto-pull by app name) |
+| **Competitor data** | 3 hardcoded apps in `compDataFull` | Dynamic watchlist from Supabase DB |
+| **Persistence** | localStorage only | Supabase PostgreSQL (watchlists + snapshots) |
+| **Creative thumbnails** | Gradient placeholders | Real thumbnails from Creative URL |
+| **Trending** | Single snapshot | 12-week CHI/CREI trend (from DB history) |
+| **Auth** | None | Phase 3: Supabase magic link |
 
 ### Data Snapshot (Conquian Zingplay, Jan–Mar 2026)
 
@@ -92,93 +131,65 @@ zps-ad-intelligence/
 
 ---
 
-## Revised Plan
+## Roadmap
 
-### Watchlist Changes
-
-**Hiện tại:** Conquian Zingplay + ZPS Poker + ZPS Bài Cào
-**Đổi thành:** Conquian Zingplay (real) + Zynga Poker (demo) + Coin Master (demo)
-
-- Xóa ZPS Poker và ZPS Bài Cào
-- Thêm Zynga Poker và Coin Master với demo data hợp lý
-- Conquian giữ nguyên real data từ Sensor Tower
-
-### Tab Structure
+### Completed (Build 1–5)
 
 ```
-Overview (comparison)  →  F1: Creative Profile  →  F2: Timer/Heatmap  →  F3: Playbook
-       │                        │                       │                     │
-  So sánh key metrics      Deep-dive per app       Timeline + channel     Patterns +
-  giữa 3 apps trong       Charts, grid,            analysis per app      recommendations
-  watchlist                auto-label, scores                             per app
+✅ Build 1:    Data Engine + UI Refresh (P0+P5+P1)
+✅ Build 1.1:  Hotfix demo data + chart colors
+✅ Build 1.2:  Cleanup hardcoded values → JS single source of truth
+✅ Build 1.3:  5 bug fixes from PUBG testing
+✅ Build 3–5:  Competitor table, creative grid, weekly workflow, auto-label removal
 ```
 
-### Overview Tab — Competitor Comparison (NEW)
-
-Hiện tại Overview chỉ show Conquian data. Cần thêm:
-
-| Section | Mô tả |
-| --- | --- |
-| **Comparison Table** | Side-by-side CHI/CREI/DL/Rev/Creatives cho 3 apps |
-| **Download Trend Overlay** | Line chart: 3 apps trên cùng timeline |
-| **Channel Mix** | Bar chart so sánh channel distribution |
-| **Winner Badges** | Highlight app dẫn đầu per metric |
-| **Quick Actions** | Click app → jump vào F1 deep-dive |
-
-Giữ lại: Signal banner, country breakdown, action queue (cho selected app).
-
-### 3 Feature Tabs (Deep-dive per selected app)
-
-**F1: Creative Profile** — portfolio health
-- Charts (Format/Stage/Hook/Trend) ← ✅ done
-- Auto-Label (Claude API) ← ✅ done
-- CHI/CREI formulas ← ✅ done
-- Creative Grid ← ⚠ cần wire sort/filter + render từ CSV
-- Brainstorm ← ⚠ cần data-driven ideas
-
-**F2: Timer/Heatmap** — timing & channel analysis
-- Combo chart ← ✅ done
-- Timeline ← ⚠ cần render từ CSV
-- Channel heatmap ← ⚠ cần render từ CSV
-
-**F3: Playbook** — patterns & recommendations
-- Pattern cards ← ✅ done (nhưng static)
-- Data gaps ← ✅ done
-- Cần auto-detect patterns từ analyzed data
-
----
-
-## Implementation Roadmap (revised)
+### Next: Build 6 — API + Database
 
 ```
-Phase 0 (done):     Code cleanup + UI Overhaul
-                    ✅ SVG icons, hover effects, responsive, accessibility
-                    ✅ Auto-label panel (Claude AI)
-                    ✅ CSV upload + CHI/CREI computation
+Build 6 Phase A:  Validate + Setup
+                  ├── Generate Sensor Tower API token
+                  ├── Test endpoints (search, downloads, creatives)
+                  ├── Vercel serverless functions (api/ folder)
+                  ├── Supabase project setup (free tier)
+                  └── Database schema (watchlists, snapshots, actions)
 
-Phase 1:            Watchlist + Demo Data
-                    ├── Đổi CompetitorSelector: Conquian / Zynga Poker / Coin Master
-                    ├── Tạo demo data cho Zynga Poker + Coin Master
-                    │   (CHI/CREI/DL/Rev/channels/countries — realistic numbers)
-                    └── Update compDataReal + conquian.js data module
+Build 6 Phase B:  Core Integration
+                  ├── /api/search.js — search apps by name
+                  ├── /api/app-data.js — pull downloads + creatives + networks
+                  ├── /api/watchlist.js — CRUD watchlists (Supabase)
+                  ├── /api/snapshots.js — save/load weekly data history
+                  ├── CompetitorSelector redesign → search input + dynamic chips
+                  ├── Creative thumbnails from real Creative URLs
+                  └── CSV upload kept as fallback
 
-Phase 2:            Overview Competitor Comparison
-                    ├── Comparison table (3 apps side-by-side)
-                    ├── Download trend overlay chart (Chart.js)
-                    ├── Channel mix comparison
-                    ├── Winner badges per metric
-                    └── Click-to-deep-dive navigation
-
-Phase 3:            Wire Up Base Features
-                    ├── F1 Creative Grid render từ CSV data
-                    ├── F1 Grid sort/filter toggle working
-                    ├── F2 Timeline + Heatmap render từ CSV
-                    ├── F3 Pattern auto-detection từ data
-                    └── Filter Bar → real filtering logic
-
-Phase 4:            Polish & Ship
-                    ├── F1 Brainstorm data-driven ideas
-                    ├── Cross-tab filter state sharing
-                    ├── Search box in CompetitorSelector
-                    └── Final QA + Vercel deploy
+Build 6 Phase C:  Polish + Deploy
+                  ├── Loading states for API calls
+                  ├── Error handling (API down, rate limits)
+                  ├── Vercel env vars setup
+                  └── Deploy to production
 ```
+
+### Future: Build 7+ (sau Build 6)
+
+```
+Build 7:  Trending + History
+          ├── CHI/CREI trend chart (12 weeks from Supabase snapshots)
+          ├── Auto-refresh data weekly (cron/scheduled function)
+          └── "Compare with last week" automatic delta
+
+Build 8:  Auth + Team
+          ├── Supabase Auth (magic link invite-only)
+          ├── Shared watchlists per team
+          ├── Action queue assignment
+          └── Weekly email digest / Slack integration
+```
+
+### Sensor Tower API Endpoints Used
+
+| Endpoint | Purpose | Data |
+| --- | --- | --- |
+| `POST /v1/unified/search_entities` | Search app by name | app_id, name, icon |
+| `GET /v1/unified/sales_report_estimates` | Downloads + revenue | weekly by country |
+| `GET /v1/unified/ad_intel/creatives` | Creative gallery | thumbnails, duration, type, networks |
+| `GET /v1/unified/ad_intel/network_analysis` | Ad network breakdown | channel distribution |
+| `GET /v1/unified/apps` | App metadata | name, publisher, category |

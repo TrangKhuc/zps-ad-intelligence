@@ -1,31 +1,85 @@
-<!-- CompetitorSelector -->
-<!-- COMPETITOR SELECTOR -->
+<!-- CompetitorSelector + Global Filters -->
+<!-- COMPETITOR SELECTOR — API-powered search + dynamic watchlist chips + global context filters -->
     <div class="comp-selector">
       <div class="comp-selector-top">
-        <span class="step-label">Step 1</span>
-        <span class="comp-selector-title">Select app</span>
-        <span class="comp-selector-hint">— upload data via button above hoặc chọn từ watchlist</span>
+        <span class="comp-selector-title">Search & Watchlist</span>
+        <span class="comp-selector-hint">— search any mobile app via Sensor Tower API</span>
       </div>
       <div class="comp-row">
-        <div class="search-box">
+        <div class="search-box" style="position:relative;">
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="#9ca3af" stroke-width="1.5"/><path d="M10 10L14 14" stroke="#9ca3af" stroke-width="1.5" stroke-linecap="round"/></svg>
-          <input type="text" placeholder="Search app name or App ID…">
+          <input type="text" id="app-search-input" placeholder="Search any mobile app..." oninput="handleSearchInput(this.value)">
+          <!-- Search results dropdown -->
+          <div class="search-dropdown" id="search-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.1);z-index:50;margin-top:4px;max-height:280px;overflow-y:auto;">
+            <div id="search-results"></div>
+            <div id="search-loading" style="display:none;padding:12px;text-align:center;font-size:11px;color:#9ca3af;">Searching...</div>
+            <div id="search-empty" style="display:none;padding:12px;text-align:center;font-size:11px;color:#9ca3af;">No results found</div>
+          </div>
         </div>
         <span class="watch-label">Watchlist</span>
-        <button class="comp-chip active" onclick="selectComp(this,'Conquian Zingplay')">
-          <span class="comp-dot" style="background:#4d65ff"></span>
-          Conquian Zingplay
-          <span class="chip-genre">Card · Real data</span>
-        </button>
-        <button class="comp-chip" onclick="selectComp(this,'Zynga Poker')">
-          <span class="comp-dot" style="background:#10b981"></span>
-          Zynga Poker
-          <span class="chip-genre">Casino · Demo</span>
-        </button>
-        <button class="comp-chip" onclick="selectComp(this,'Coin Master')">
-          <span class="comp-dot" style="background:#f59e0b"></span>
-          Coin Master
-          <span class="chip-genre">Casual · Demo</span>
-        </button>
+        <div id="watchlist-chips" style="display:contents;">
+          <!-- Chips loaded dynamically from API -->
+        </div>
+        <button class="comp-chip-add" onclick="document.getElementById('app-search-input').focus()" style="width:26px;height:26px;border-radius:50%;border:2px dashed #d1d5db;background:transparent;color:#9ca3af;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;" title="Add app">+</button>
+      </div>
+
+      <!-- Global Context Filters — same row area -->
+      <div class="gf-row">
+        <div class="gf-group">
+          <label class="gf-label">Platform</label>
+          <div class="gf-toggle" id="gf-platform">
+            <button class="gf-btn active" data-value="all" onclick="setGlobalFilter('platform','all',this)">All</button>
+            <button class="gf-btn" data-value="ios" onclick="setGlobalFilter('platform','ios',this)">iOS</button>
+            <button class="gf-btn" data-value="android" onclick="setGlobalFilter('platform','android',this)">Android</button>
+          </div>
+        </div>
+
+        <div class="gf-sep"></div>
+
+        <div class="gf-group">
+          <label class="gf-label">Market</label>
+          <select class="gf-select" id="gf-market" onchange="applyGlobalFilters()">
+            <option value="all">All Markets</option>
+            <option value="WW">Worldwide</option>
+            <option value="US">United States</option>
+            <option value="MX">Mexico</option>
+            <option value="BR">Brazil</option>
+            <option value="VN">Vietnam</option>
+            <option value="PH">Philippines</option>
+            <option value="IN">India</option>
+            <option value="ID">Indonesia</option>
+            <option value="TH">Thailand</option>
+            <option value="JP">Japan</option>
+            <option value="KR">South Korea</option>
+          </select>
+        </div>
+
+        <div class="gf-sep"></div>
+
+        <div class="gf-group">
+          <label class="gf-label">Date Range</label>
+          <select class="gf-select" id="gf-daterange" onchange="handleDateRangeChange(this.value)">
+            <option value="7">Last 7 days</option>
+            <option value="14">Last 14 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="60">Last 60 days</option>
+            <option value="90" selected>Last 90 days</option>
+            <option value="180">Last 6 months</option>
+            <option value="365">Last 1 year</option>
+            <option value="custom">Custom range...</option>
+          </select>
+        </div>
+
+        <!-- Custom date inputs (hidden by default) -->
+        <div class="gf-group gf-custom-dates" id="gf-custom-wrap" style="display:none;">
+          <input type="date" class="gf-date-input" id="gf-date-start">
+          <span style="font-size:11px;color:var(--t3);">to</span>
+          <input type="date" class="gf-date-input" id="gf-date-end">
+          <button class="gf-apply-btn" onclick="applyCustomDateRange()">Apply</button>
+        </div>
+
+        <div class="gf-context" id="gf-context-label">
+          All platforms · All markets · Last 90 days
+        </div>
       </div>
     </div>

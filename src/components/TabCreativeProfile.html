@@ -2,136 +2,140 @@
 <!-- ═══════════ F1: CREATIVE PROFILE ═══════════ -->
     <div class="content" id="tab-f1">
 
-      <!-- ── SECTION 1: OVERVIEW CHART ── -->
-      <div class="overview-section">
-        <div class="overview-section-head">
-          <div>
-            <div class="card-title">Creative mix overview</div>
-            <div class="card-sub">Tỉ trọng creative theo format, stage và hook · Last 30d · mỗi tuần cộng = 100%</div>
-          </div>
-          <div class="chart-toggle">
-            <button class="ct-btn active" onclick="switchChart('format', this)">By Format</button>
-            <button class="ct-btn" onclick="switchChart('stage', this)">By Stage</button>
-            <button class="ct-btn" onclick="switchChart('hook', this)">By Hook</button>
-            <button class="ct-btn" onclick="switchChart('trend', this)">Weekly trend</button>
-          </div>
-        </div>
-        <div class="chart-wrap">
-          <div id="chart-format" class="chart-canvas-wrap"><canvas id="c-format"></canvas></div>
-          <div id="chart-stage"  class="chart-canvas-wrap" style="display:none"><canvas id="c-stage"></canvas></div>
-          <div id="chart-hook"   class="chart-canvas-wrap" style="display:none"><canvas id="c-hook"></canvas></div>
-          <div id="chart-trend"  class="chart-canvas-wrap" style="display:none"><canvas id="c-trend"></canvas></div>
-        </div>
-        <div class="insight-pills" id="chart-pills">
-          <!-- pills injected by JS based on active chart -->
-        </div>
+      <!-- Hidden chart canvases for JS compatibility -->
+      <div style="display:none;">
+        <canvas id="c-format"></canvas>
+        <canvas id="c-stage"></canvas>
+        <canvas id="c-hook"></canvas>
+        <canvas id="c-trend"></canvas>
+        <div id="chart-pills"></div>
+        <div id="f1-analyst-note"></div>
       </div>
 
-
-      <!-- ── SECTION 2: ANALYST NOTE (single, merged) ── -->
-      <div class="note" style="margin-bottom:20px;">
-        <div class="note-label">Analyst note — Creative Profile</div>
-        <div class="note-text" id="f1-analyst-note">Select a competitor or upload CSV to see creative profile analysis.</div>
-      </div>
-
-      <!-- ── SECTION 3: CHI + CREI COMBINED ── -->
-      <div class="card" style="margin-bottom:20px;">
+      <!-- ── SECTION 2: Downloads vs New Creatives (moved from Network & Trends) ── -->
+      <div class="card" style="margin-bottom:12px;">
         <div class="card-head">
           <div>
-            <div class="card-title">Score breakdown</div>
-            <div class="card-sub">CHI và CREI — công thức tính và sub-scores tuần này vs tuần trước</div>
+            <div class="card-title" style="font-weight:600;">Downloads vs New Creatives</div>
           </div>
-          <div style="display:flex;gap:20px;align-items:center;">
-            <div style="text-align:right;">
-              <div style="font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;">CHI</div>
-              <div id="f1-chi-big" style="font-family:var(--fd);font-size:26px;font-weight:800;color:var(--t3);letter-spacing:-.03em;line-height:1;">—</div>
-            </div>
-            <div style="width:1px;height:36px;background:var(--border);"></div>
-            <div style="text-align:right;">
-              <div style="font-family:var(--fm);font-size:9px;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;">CREI</div>
-              <div id="f1-crei-big" style="font-family:var(--fd);font-size:26px;font-weight:800;color:var(--t3);letter-spacing:-.03em;line-height:1;">—</div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select class="sort-sel" id="f2-range-sel" onchange="updateF2Charts()" style="font-size:11px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;color:var(--t2);background:#fff;">
+              <option value="8">Weekly · 8w</option>
+              <option value="12">Weekly · 12w</option>
+            </select>
+            <div class="chart-type-toggle" style="display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+              <button onclick="toggleChartType('c-f2-dl','bar',this)" class="ct-btn ct-active" style="padding:4px 10px;font-size:11px;border:none;cursor:pointer;font-family:inherit;background:#4d65ff;color:#fff;font-weight:500;">Bar</button>
+              <button onclick="toggleChartType('c-f2-dl','line',this)" class="ct-btn" style="padding:4px 10px;font-size:11px;border:none;border-left:1px solid var(--border);cursor:pointer;font-family:inherit;background:#fff;color:var(--t2);">Line</button>
             </div>
           </div>
+        </div>
+        <div class="card-body">
+          <div class="f2-chart-wrap"><canvas id="c-f2-dl"></canvas></div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 3: Creative Trends (moved from Network & Trends) ── -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-head">
+          <div><div class="card-title" style="font-weight:600;">Creative Trends</div></div>
+        </div>
+        <div class="card-body">
+          <div style="display:flex;gap:4px;margin-bottom:12px;">
+            <button class="ct-btn active" onclick="switchF2Trend('hook', this)" style="padding:5px 12px;border:1px solid var(--border);border-radius:6px;font-size:11px;cursor:pointer;background:var(--accent);color:#fff;border-color:var(--accent);font-weight:500;">By Hook</button>
+            <button class="ct-btn" onclick="switchF2Trend('format', this)" style="padding:5px 12px;border:1px solid var(--border);border-radius:6px;font-size:11px;cursor:pointer;background:#fff;color:var(--t2);font-weight:500;">By Format</button>
+            <button class="ct-btn" onclick="switchF2Trend('stage', this)" style="padding:5px 12px;border:1px solid var(--border);border-radius:6px;font-size:11px;cursor:pointer;background:#fff;color:var(--t2);font-weight:500;">By Stage</button>
+          </div>
+          <div id="f2-trend-hook" style="">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--t3);font-weight:600;margin-bottom:8px;">Top Hooks — Last 30 Days</div>
+            <div id="f2-hook-bars"><div style="font-size:10px;color:var(--t3);">Loading hook data…</div></div>
+            <div id="f2-hook-insight" style="margin-top:12px;padding:10px;background:#fffbeb;border-radius:6px;border:1px solid #fde68a;">
+              <div style="font-size:11px;font-weight:600;color:#92400e;">Insight: Missing hooks vs competitors</div>
+              <div style="font-size:11px;color:#a16207;margin-top:2px;" id="f2-hook-insight-text">Compare your hook distribution with competitors to find gaps.</div>
+            </div>
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--t3);font-weight:600;margin:14px 0 8px;">Hook Trend (8 weeks)</div>
+            <div id="f2-hook-sparklines" style="display:flex;gap:12px;flex-wrap:wrap;"><div style="font-size:10px;color:var(--t3);">Loading trend data…</div></div>
+          </div>
+          <div id="f2-trend-format" style="display:none;">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--t3);font-weight:600;margin-bottom:8px;">Format Distribution</div>
+            <div id="f2-format-bars"><div style="font-size:10px;color:var(--t3);">Loading format data…</div></div>
+          </div>
+          <div id="f2-trend-stage" style="display:none;">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--t3);font-weight:600;margin-bottom:8px;">Stage Distribution</div>
+            <div id="f2-stage-bars"><div style="font-size:10px;color:var(--t3);">Loading stage data…</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SECTION 4: SCORE BREAKDOWN (mockup: CHI + CREI side by side) ── -->
+      <div class="card" style="margin-bottom:12px;">
+        <div class="card-head">
+          <div><div class="card-title" style="font-weight:600;">Score Breakdown</div></div>
         </div>
         <div class="card-body" style="padding:0;">
+          <div class="grid-2" style="gap:0;">
 
-          <!-- CHI sub-scores -->
-          <div style="padding:12px 18px 8px;border-bottom:1px solid var(--border);">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-              <div style="font-family:var(--fm);font-size:9px;color:var(--t2);text-transform:uppercase;letter-spacing:.08em;">CHI — Creative Health Index</div>
-              <span class="formula-trigger" onclick="toggleFormula('chi-formula')">
-                <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M6 6c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="13" r=".7" fill="currentColor"/></svg>
-                Xem công thức
-              </span>
-            </div>
-            <div id="chi-formula" class="formula-panel" style="margin-bottom:10px;">
-              <div class="fp-title">CHI = weighted sum của 4 sub-scores</div>
-              <div class="fp-row"><div class="fp-sub">Active run rate</div><div class="fp-formula">% creatives có last_seen ≤ 3d trước / total trong 30d</div><div class="fp-weight">×30%</div></div>
-              <div class="fp-row"><div class="fp-sub">Hook diversity</div><div class="fp-formula">min(unique hook categories / 5, 1) × 100</div><div class="fp-weight">×25%</div></div>
-              <div class="fp-row"><div class="fp-sub">Outperform rate</div><div class="fp-formula">% creatives có life cycle > genre median (BR: 15d)</div><div class="fp-weight">×25%</div></div>
-              <div class="fp-row"><div class="fp-sub">Refresh cadence</div><div class="fp-formula">min(genre_median_refresh / avg_days_between_launches, 1) × 100</div><div class="fp-weight">×20%</div></div>
-              <div class="fp-note">Ví dụ tính: 80×0.30 + 100×0.25 + 62×0.25 + 58×0.20 = 24 + 25 + 15.5 + 11.6 = <strong>76.1</strong> → smoothed display: 74</div>
-            </div>
-            <div id="f1-chi-subs" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--border);">
-              <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px 10px 0;border-right:1px solid var(--border);border-bottom:none;">
-                <div class="chi-label">Active run rate</div>
-                <div class="chi-reason" id="f1-active-reason">—</div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--t3)" id="f1-active-score">—</span><span class="delta-badge" id="f1-active-delta"></span></div>
+            <!-- CHI side -->
+            <div style="padding:12px 16px;border-right:1px solid var(--border);">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--t3);font-weight:600;margin-bottom:4px;">CHI — Creative Health Index
+                <span id="f1-chi-big" style="font-size:14px;font-weight:700;color:var(--accent);margin-left:6px;">—</span>
               </div>
-              <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px;border-right:1px solid var(--border);border-bottom:none;">
-                <div class="chi-label">Hook diversity</div>
-                <div class="chi-reason" id="f1-hook-reason">—</div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--t3)" id="f1-hook-score">—</span><span class="delta-badge" id="f1-hook-delta"></span></div>
-              </div>
-              <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px;border-right:1px solid var(--border);border-bottom:none;">
-                <div class="chi-label">Outperform rate</div>
-                <div class="chi-reason" id="f1-outperform-reason">—</div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--t3)" id="f1-outperform-score">—</span><span class="delta-badge" id="f1-outperform-delta"></span></div>
-              </div>
-              <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 0 10px 14px;border-bottom:none;">
-                <div class="chi-label">Refresh cadence</div>
-                <div class="chi-reason" id="f1-refresh-reason">—</div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--t3)" id="f1-refresh-score">—</span><span class="delta-badge" id="f1-refresh-delta"></span></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div style="padding:10px;background:#f8f9fb;border-radius:6px;border:1px solid var(--border);">
+                  <div style="font-size:10px;color:var(--t2);font-weight:500;">Active Ads % <span style="font-size:8px;color:var(--t3);">(30%)</span></div>
+                  <div id="f1-active-score" style="font-size:16px;font-weight:700;">—</div>
+                  <div id="f1-active-reason" style="font-size:10px;color:var(--t3);">—</div>
+                </div>
+                <div style="padding:10px;background:#f8f9fb;border-radius:6px;border:1px solid var(--border);">
+                  <div style="font-size:10px;color:var(--t2);font-weight:500;">Message Variety <span style="font-size:8px;color:var(--t3);">(25%)</span></div>
+                  <div id="f1-hook-score" style="font-size:16px;font-weight:700;">—</div>
+                  <div id="f1-hook-reason" style="font-size:10px;color:var(--t3);">—</div>
+                </div>
+                <div style="padding:10px;background:#f8f9fb;border-radius:6px;border:1px solid var(--border);">
+                  <div style="font-size:10px;color:var(--t2);font-weight:500;">Winner Rate <span style="font-size:8px;color:var(--t3);">(25%)</span></div>
+                  <div id="f1-outperform-score" style="font-size:16px;font-weight:700;">—</div>
+                  <div id="f1-outperform-reason" style="font-size:10px;color:var(--t3);">—</div>
+                </div>
+                <div style="padding:10px;background:#f8f9fb;border-radius:6px;border:1px solid var(--border);">
+                  <div style="font-size:10px;color:var(--t2);font-weight:500;">New Ads/Week <span style="font-size:8px;color:var(--t3);">(20%)</span></div>
+                  <div id="f1-refresh-score" style="font-size:16px;font-weight:700;">—</div>
+                  <div id="f1-refresh-reason" style="font-size:10px;color:var(--t3);">—</div>
+                </div>
               </div>
             </div>
+
+            <!-- CREI side -->
+            <div style="padding:12px 16px;">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--t3);font-weight:600;margin-bottom:4px;">CREI — Risk & Engagement
+                <span id="f1-crei-big" style="font-size:14px;font-weight:700;color:var(--accent);margin-left:6px;">—</span>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                <div style="padding:10px;background:#f8f9fb;border-radius:6px;border:1px solid var(--border);">
+                  <div style="font-size:10px;color:var(--t2);font-weight:500;">Output Speed <span style="font-size:8px;color:var(--t3);">(40%)</span></div>
+                  <div id="f1-momentum-score" style="font-size:16px;font-weight:700;">—</div>
+                  <div id="f1-momentum-reason" style="font-size:10px;color:var(--t3);">—</div>
+                </div>
+                <div style="padding:10px;background:#f8f9fb;border-radius:6px;border:1px solid var(--border);">
+                  <div style="font-size:10px;color:var(--t2);font-weight:500;">Engagement Change <span style="font-size:8px;color:var(--t3);">(35%)</span></div>
+                  <div id="f1-engagement-score" style="font-size:16px;font-weight:700;">—</div>
+                  <div id="f1-engagement-reason" style="font-size:10px;color:var(--t3);">—</div>
+                </div>
+                <div style="padding:10px;background:#f8f9fb;border-radius:6px;border:1px solid var(--border);grid-column:1/3;">
+                  <div style="font-size:10px;color:var(--t2);font-weight:500;">Channel Spread <span style="font-size:8px;color:var(--t3);">(25%)</span></div>
+                  <div id="f1-stability-score" style="font-size:16px;font-weight:700;">—</div>
+                  <div id="f1-stability-reason" style="font-size:10px;color:var(--t3);">—</div>
+                </div>
+              </div>
+            </div>
+
           </div>
-
-          <!-- CREI sub-scores -->
-          <div style="padding:12px 18px 8px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-              <div style="font-family:var(--fm);font-size:9px;color:var(--t2);text-transform:uppercase;letter-spacing:.08em;">CREI — Creative Risk &amp; Engagement Index</div>
-              <span class="formula-trigger" onclick="toggleFormula('crei-formula')">
-                <svg width="10" height="10" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M6 6c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="13" r=".7" fill="currentColor"/></svg>
-                Xem công thức
-              </span>
-            </div>
-            <div id="crei-formula" class="formula-panel" style="margin-bottom:10px;">
-              <div class="fp-title">CREI = weighted sum của 3 components</div>
-              <div class="fp-row"><div class="fp-sub">Momentum</div><div class="fp-formula">min(new_creatives/week / genre_median_weekly, 1.5) / 1.5 × 100</div><div class="fp-weight">×40%</div></div>
-              <div class="fp-row"><div class="fp-sub">Engagement delta</div><div class="fp-formula">sigmoid(WoW impression change %) × 100 — normalized, 50 = no change</div><div class="fp-weight">×35%</div></div>
-              <div class="fp-row"><div class="fp-sub">Channel stability</div><div class="fp-formula">(1 − HHI) × 100, HHI = Σ(channel_share²) — cao = concentrated</div><div class="fp-weight">×25%</div></div>
-              <div class="fp-note">Reading combinations: Momentum↑ Engagement↑ Stability↑ = scaling confidently. Momentum↑ Stability↓ = blitz/volatile. Momentum↓ Stability↑ = defending. Hiện tại Garena: consolidation (momentum↓ post-blitz, engagement normalizing, channel pivot TikTok).</div>
-            </div>
-            <div id="f1-crei-subs" style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--border);">
-              <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px 10px 0;border-right:1px solid var(--border);border-bottom:none;">
-                <div class="chi-label">Momentum</div>
-                <div class="chi-reason" id="f1-momentum-reason">—</div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--t3)" id="f1-momentum-score">—</span><span class="delta-badge" id="f1-momentum-delta"></span></div>
-              </div>
-              <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px;border-right:1px solid var(--border);border-bottom:none;">
-                <div class="chi-label">Engagement delta</div>
-                <div class="chi-reason" id="f1-engagement-reason">—</div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--t3)" id="f1-engagement-score">—</span><span class="delta-badge" id="f1-engagement-delta"></span></div>
-              </div>
-              <div class="chi-row" style="flex-direction:column;align-items:flex-start;gap:4px;padding:10px 0 10px 14px;border-bottom:none;">
-                <div class="chi-label">Channel stability</div>
-                <div class="chi-reason" id="f1-stability-reason">—</div>
-                <div style="display:flex;align-items:baseline;gap:5px;margin-top:4px;"><span class="chi-score" style="color:var(--t3)" id="f1-stability-score">—</span><span class="delta-badge" id="f1-stability-delta"></span></div>
-              </div>
-            </div>
-          </div>
-
         </div>
+      </div>
+
+      <!-- Hidden elements for JS compatibility -->
+      <div style="display:none;">
+        <span id="f1-active-delta"></span><span id="f1-hook-delta"></span><span id="f1-outperform-delta"></span><span id="f1-refresh-delta"></span>
+        <span id="f1-momentum-delta"></span><span id="f1-engagement-delta"></span><span id="f1-stability-delta"></span>
+        <div id="chi-formula"></div><div id="crei-formula"></div>
       </div>
 
       <!-- ── SECTION 4: CREATIVE GRID ── -->
@@ -155,6 +159,51 @@
             <button class="vbtn"><svg width="13" height="13" viewBox="0 0 16 16" fill="none"><line x1="2" y1="4" x2="14" y2="4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="2" y1="8" x2="14" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="2" y1="12" x2="14" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
           </div>
         </div>
+      </div>
+
+      <!-- ── FILTER ROW ── -->
+      <div class="filter-row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <select class="filter-dd" id="f1-filter-network" onchange="applyCreativeFilters()" style="font-size:11px;padding:6px 12px;border:1px solid var(--border);border-radius:6px;color:var(--t2);background:#fff;cursor:pointer;">
+          <option value="">Ad Network</option>
+          <option value="Facebook">Facebook</option>
+          <option value="Instagram">Instagram</option>
+          <option value="MAN">MAN</option>
+          <option value="Google UAC">Google UAC</option>
+          <option value="TikTok">TikTok</option>
+          <option value="AppLovin">AppLovin</option>
+          <option value="Unity">Unity</option>
+          <option value="Snapchat">Snapchat</option>
+        </select>
+        <select class="filter-dd" id="f1-filter-platform" onchange="applyCreativeFilters()" style="font-size:11px;padding:6px 12px;border:1px solid var(--border);border-radius:6px;color:var(--t2);background:#fff;cursor:pointer;">
+          <option value="">Platform</option>
+          <option value="ios">iOS</option>
+          <option value="android">Android</option>
+        </select>
+        <select class="filter-dd" id="f1-filter-format" onchange="applyCreativeFilters()" style="font-size:11px;padding:6px 12px;border:1px solid var(--border);border-radius:6px;color:var(--t2);background:#fff;cursor:pointer;">
+          <option value="">Format</option>
+          <option value="video">Video</option>
+          <option value="image">Image</option>
+          <option value="playable">Playable</option>
+        </select>
+        <select class="filter-dd" id="f1-filter-tag" onchange="applyCreativeFilters()" style="font-size:11px;padding:6px 12px;border:1px solid var(--border);border-radius:6px;color:#4d65ff;background:#f0f3ff;border-color:#c7d0ff;cursor:pointer;">
+          <option value="">AI Auto-Tag</option>
+          <option value="Gameplay demo">Gameplay demo</option>
+          <option value="Social proof">Social proof</option>
+          <option value="Win reveal">Win reveal</option>
+          <option value="FOMO">FOMO</option>
+          <option value="Challenge">Challenge</option>
+          <option value="Tutorial">Tutorial</option>
+          <option value="UGC-style">UGC-style</option>
+          <option value="Reward">Reward</option>
+          <option value="Cinematic">Cinematic</option>
+          <option value="Before/After">Before/After</option>
+        </select>
+        <select class="filter-dd" id="f1-filter-quality" onchange="applyCreativeFilters()" style="font-size:11px;padding:6px 12px;border:1px solid var(--border);border-radius:6px;color:var(--t2);background:#fff;cursor:pointer;">
+          <option value="">Quality</option>
+          <option value="high">High</option>
+          <option value="average">Average</option>
+          <option value="low">Low</option>
+        </select>
       </div>
 
       <div class="creative-grid">
@@ -263,7 +312,9 @@
 
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;">
-        <span style="font-family:var(--fm);font-size:10px;color:var(--t2);">Showing top 5 of 126 active creatives · sorted by duration</span>
+        <div id="f1-pagination" style="display:flex;align-items:center;gap:10px;">
+          <span style="font-family:var(--fm);font-size:10px;color:var(--t2);">Loading creatives…</span>
+        </div>
         <button class="card-btn" style="display:flex;align-items:center;gap:6px;" onclick="toggleBrainstorm()">
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M6 7c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M8 11v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           Brainstorm new ideas

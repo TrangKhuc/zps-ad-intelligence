@@ -14,37 +14,27 @@
 <!--
   ZPS Ad Intelligence — Component Map
   =====================================
-  Edit individual components in src/components/
-  Data reference in src/data/conquian.js (not imported — live data is in main.js)
-  Edit styles in src/styles/main.css
-  Edit JS logic in src/main.js
-
   Components:
-    Topbar.html             — Logo, breadcrumb, upload button, sync status
-    UploadPanel.html        — 3-slot CSV upload (Sensor Tower exports)
-    Sidebar.html            — Left nav (Overview, Creative Profile, Timer, Playbook)
-    CompetitorSelector.html — Step 1: app watchlist chips
+    Topbar.html             — Logo, breadcrumb, Sync API button
+    Sidebar.html            — Left nav (Overview, Creative Profile, Network & Trends, Playbook, Watchlist)
+    CompetitorSelector.html — Search bar + dynamic watchlist chips
     IntelRail.html          — CHI/CREI/Downloads KPI bar (always visible)
-    FilterBar.html          — 2-row filter bar with dropdown options
-    TabNav.html             — Tab buttons (Overview / F1 / F2 / F3)
-    TabOverview.html        — Summary signals + action queue
-    TabCreativeProfile.html — F1: charts + CHI/CREI breakdown + creative grid + brainstorm
-    TabTimerHeatmap.html    — F2: timeline + Chart.js combo + channel heatmap
-    TabPlaybook.html        — F3: real patterns + data gap card
+    FilterBar.html          — Filter dropdowns
+    TabNav.html             — Tab buttons
+    TabOverview.html        — Competitor table + comparison charts + market intel
+    TabCreativeProfile.html — Score breakdown + creative gallery + brainstorm
+    TabTimerHeatmap.html    — Network & Trends (downloads vs creatives + trends + network table)
+    TabPlaybook.html        — Performance snapshot + action queue + patterns
+    TabSettings.html        — Watchlist management + API usage + export
 -->
 
 <div class="shell" id="app-shell">
-  <!-- injected by build or assembled here directly -->
+  <!-- injected by component assembler below -->
 </div>
 
 <script type="module">
-  // Simple component assembler — loads HTML partials into #app-shell
-  // In Nimbalyst / Claude Code, you can edit any component file directly
-  // and refresh to see changes, or ask Claude Code to update specific components.
-
   const COMPONENTS = [
     'src/components/Topbar.html',
-    'src/components/UploadPanel.html',
     'src/components/Sidebar.html',
   ];
 
@@ -57,6 +47,7 @@
     'src/components/TabCreativeProfile.html',
     'src/components/TabTimerHeatmap.html',
     'src/components/TabPlaybook.html',
+    'src/components/TabSettings.html',
   ];
 
   async function loadComponent(path) {
@@ -73,7 +64,7 @@
   async function init() {
     const shell = document.getElementById('app-shell');
 
-    // Load topbar, upload panel, sidebar (grid-column: 1/-1 or 1)
+    // Load topbar + sidebar
     for (const path of COMPONENTS) {
       const html = await loadComponent(path);
       shell.insertAdjacentHTML('beforeend', html);
@@ -88,10 +79,15 @@
     }
     shell.appendChild(mainDiv);
 
-    // Load and execute main JS
-    const script = document.createElement('script');
-    script.src = 'src/main.js';
-    document.body.appendChild(script);
+    // Load API client first, then main JS
+    const apiScript = document.createElement('script');
+    apiScript.src = 'src/api.js';
+    apiScript.onload = () => {
+      const mainScript = document.createElement('script');
+      mainScript.src = 'src/main.js';
+      document.body.appendChild(mainScript);
+    };
+    document.body.appendChild(apiScript);
   }
 
   init();
